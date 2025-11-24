@@ -1,0 +1,44 @@
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+
+const FlipCard = ({ frontContent, backContent, className = "", height = "h-80" }) => {
+  const [isFlipped, setIsFlipped] = useState(false);
+
+  return (
+    <div 
+      className={`relative w-full ${height} cursor-pointer ${className}`} 
+      onMouseEnter={() => setIsFlipped(true)}
+      onMouseLeave={() => setIsFlipped(false)}
+      style={{ perspective: "1000px" }}
+    >
+      <motion.div
+        className="relative w-full h-full"
+        initial={false}
+        animate={{ rotateY: isFlipped ? 180 : 0 }}
+        transition={{ duration: 0.8, ease: "easeInOut" }}
+        style={{ transformStyle: "preserve-3d" }}
+      >
+        {/* Front */}
+        <div 
+            className="absolute inset-0 w-full h-full"
+            style={{ backfaceVisibility: 'hidden' }}
+        >
+          {frontContent}
+        </div>
+
+        {/* Back */}
+        <div 
+            className="absolute inset-0 w-full h-full"
+            style={{ 
+                backfaceVisibility: 'hidden', 
+                transform: 'rotateY(180deg)' 
+            }}
+        >
+          {backContent}
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
+export default FlipCard;

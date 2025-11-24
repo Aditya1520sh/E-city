@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  password  String   @default("123456")
+  name      String?
+  role      String   @default("citizen") // citizen, admin
+  googleId  String?  @unique
+  avatar    String?
+  createdAt DateTime @default(now())
+  issues    Issue[]
+  comments  Comment[]
+  events    Event[]   @relation(fields: [eventIds], references: [id])
+  eventIds  String[]  @db.ObjectId
+  votes     PollVote[]
+}
+
+model Issue {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String
+  status      String   @default("pending") // pending, in-progress, resolved, rejected
+  category    String   // infrastructure, sanitation, electricity, other
+  location    String
+  latitude    Float?
+  longitude   Float?
+  imageUrl    String?
+  upvotes     Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // In-Progress fields
+  assignedOfficer     String?
+  assignedDepartment  String?
+  estimatedCompletion DateTime?
+  actionTaken         String?
+  progressUpdate      String?
+  
+  // Resolution fields
+  resolutionTime      DateTime?
+  resolutionRemarks   String?
+  resolutionOfficer   String?
+  beforeImage         String?
+  afterImage          String?
+  costIncurred        Float?
+  resourcesUsed       String?
+  
+  // Rejection fields
+  rejectionReason     String?
+  alternativeSuggestion String?
+  
+  userId      String?  @db.ObjectId
+  user        User?    @relation(fields: [userId], references: [id])
+  comments    Comment[]
+}
+
+model Comment {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  content   String
+  createdAt DateTime @default(now())
+  issueId   String   @db.ObjectId
+  issue     Issue    @relation(fields: [issueId], references: [id])
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Service {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  description String
+  contact     String
+  isOpen      Boolean  @default(true)
+}
+
+model Event {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String
+  date        DateTime
+  location    String
+  organizer   String?
+  type        String   @default("general") // cultural, educational, healthcare, workshop
+  imageUrl    String?
+  createdAt   DateTime @default(now())
+  participants User[]   @relation(fields: [participantIds], references: [id])
+  participantIds String[] @db.ObjectId
+}
+
+model Poll {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  question  String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  options   PollOption[]
+  votes     PollVote[]
+}
+
+model PollOption {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  text      String
+  pollId    String   @db.ObjectId
+  poll      Poll     @relation(fields: [pollId], references: [id])
+  votes     PollVote[]
+}
+
+model PollVote {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  pollId    String   @db.ObjectId
+  poll      Poll     @relation(fields: [pollId], references: [id])
+  optionId  String   @db.ObjectId
+  option    PollOption @relation(fields: [optionId], references: [id])
+
+  @@unique([userId, pollId])
+}
+
+model Announcement {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  title     String
+  content   String
+  priority  String   @default("normal") // low, normal, high
+  createdAt DateTime @default(now())
+}
+
+model Location {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  type      String   // park, office, hospital, etc.
+  latitude  Float
+  longitude Float
+  address   String?
+  contact   String?
+  imageUrl  String?
+}
+
+model Setting {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  key         String   @unique
+  value       String
+  description String?
+}
+
+model Department {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  head        String?
+  contact     String?
+  email       String?
+  location    String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

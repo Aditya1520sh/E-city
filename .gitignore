@@ -1,0 +1,25 @@
+node_modules
+client/node_modules
+server/node_modules
+.env
+.env.local
+.env.production
+dist
+client/dist
+.DS_Store
+coverage
+.vercel
+server/uploads
+
+# Private folder with sensitive data
+private/
+
+# Explicitly ignore env files in subdirectories
+server/.env
+client/.env
+
+# Allow non-sensitive placeholders in `private/` so others can replace them
+!private/.gitkeep
+!private/README.md
+!private/PLACEHOLDER_API.md
+

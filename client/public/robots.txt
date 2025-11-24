@@ -1,0 +1,15 @@
+# Allow all bots
+User-agent: *
+Allow: /
+
+# Disallow admin pages
+Disallow: /admin
+Disallow: /admin/*
+
+# Disallow user dashboard (requires login)
+Disallow: /dashboard
+Disallow: /report
+Disallow: /issues/*
+
+# Sitemap location
+Sitemap: https://your-domain.com/sitemap.xml
