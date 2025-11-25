@@ -18,8 +18,3 @@ private/
 server/.env
 client/.env
 
-# Allow non-sensitive placeholders in `private/` so others can replace them
-!private/.gitkeep
-!private/README.md
-!private/PLACEHOLDER_API.md
-

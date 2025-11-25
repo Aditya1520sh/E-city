@@ -2,10 +2,10 @@ const express = require('express');
 const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
 const multer = require('multer');
-const path = require('path');
+const cloudinary = require('../config/cloudinary');
+const streamifier = require('streamifier');
 const authenticateToken = require('../middleware/auth');
 const { body, param, validationResult } = require('express-validator');
-const fs = require('fs');
 
 const prisma = new PrismaClient();
 const router = express.Router();
@@ -13,36 +13,22 @@ const router = express.Router();
 // Apply authentication middleware to all routes
 router.use(authenticateToken);
 
-// Configure Multer for file uploads with validation
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadPath = process.env.VERCEL ? '/tmp' : 'uploads/';
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
-    }
-    cb(null, uploadPath)
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname))
-  }
-});
-
+// Configure Multer for file uploads (memory storage for Cloudinary)
+const storage = multer.memoryStorage();
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|gif|webp/;
-  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+  const extname = allowedTypes.test(file.originalname.toLowerCase());
   const mimetype = allowedTypes.test(file.mimetype);
-  
   if (mimetype && extname) {
-    return cb(null, true);
+    cb(null, true);
   } else {
     cb(new Error('Only image files (jpeg, jpg, png, gif, webp) are allowed'));
   }
 };
-
-const upload = multer({ 
-  storage: storage,
-  fileFilter: fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 }
 });
 
 // Validation middleware
@@ -65,7 +51,7 @@ const validateStatusUpdate = [
 // Get all issues with filtering
 router.get('/', async (req, res) => {
   const { category, status, search, userId } = req.query;
-  
+
   let where = {};
   if (category && category !== 'all') where.category = category;
   if (status && status !== 'all') where.status = status;
@@ -82,7 +68,7 @@ router.get('/', async (req, res) => {
     const issues = await prisma.issue.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      include: { 
+      include: {
         user: true,
         _count: {
           select: { comments: true }
@@ -101,7 +87,7 @@ router.get('/:id', async (req, res) => {
   try {
     const issue = await prisma.issue.findUnique({
       where: { id: id },
-      include: { 
+      include: {
         user: true,
         comments: {
           include: { user: true },
@@ -124,7 +110,38 @@ router.post('/', upload.single('image'), validateCreateIssue, async (req, res) =
   }
 
   const { title, description, category, location, userId } = req.body;
-  const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
+  let imageUrl = null;
+
+  if (req.file) {
+    // Validate Cloudinary configuration
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      console.error('CRITICAL: Cloudinary environment variables are not configured');
+      return res.status(500).json({
+        error: 'Image upload service is not configured. Please contact the administrator.'
+      });
+    }
+
+    try {
+      console.log('Uploading to Cloudinary...');
+      const uploadResult = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream({ resource_type: 'image' }, (error, result) => {
+          if (error) {
+            console.error('Cloudinary upload error:', error);
+            return reject(error);
+          }
+          resolve(result);
+        });
+        streamifier.createReadStream(req.file.buffer).pipe(uploadStream);
+      });
+      imageUrl = uploadResult.secure_url;
+      console.log('Cloudinary upload success:', imageUrl);
+    } catch (err) {
+      console.error('Cloudinary upload failed:', err.message, err);
+      return res.status(500).json({
+        error: 'Failed to upload image. Please try again or report the issue without an image.'
+      });
+    }
+  }
 
   try {
     const issue = await prisma.issue.create({
@@ -153,7 +170,7 @@ router.patch('/:id/status', validateStatusUpdate, async (req, res) => {
 
   const { id } = req.params;
   const { status, resolutionTime, resolutionRemarks, resolutionOfficer } = req.body;
-  
+
   const data = { status };
   if (resolutionTime) data.resolutionTime = resolutionTime;
   if (resolutionRemarks) data.resolutionRemarks = resolutionRemarks;

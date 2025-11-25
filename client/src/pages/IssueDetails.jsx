@@ -91,7 +91,7 @@ const IssueDetails = () => {
           {issue.imageUrl && (
             <div className="mb-8">
               <img 
-                src={`${ROOT_BASE}${issue.imageUrl}`} 
+                src={issue.imageUrl} 
                 alt={issue.title} 
                 className="w-full h-64 md:h-96 object-cover rounded-xl"
               />

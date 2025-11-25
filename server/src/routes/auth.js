@@ -8,15 +8,20 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
 const prisma = new PrismaClient();
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-this';
+
+// Fail fast if JWT_SECRET is not configured
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('CRITICAL: JWT_SECRET environment variable is required for security');
+}
 
 // Configure Google OAuth Strategy (only if credentials are provided)
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   passport.use(new GoogleStrategy({
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.GOOGLE_CALLBACK_URL || "http://localhost:3000/api/auth/google/callback"
-    },
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: process.env.GOOGLE_CALLBACK_URL || "http://localhost:3000/api/auth/google/callback"
+  },
     async (accessToken, refreshToken, profile, done) => {
       try {
         // Check if user exists
@@ -40,7 +45,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
           // Update existing user with Google ID
           user = await prisma.user.update({
             where: { id: user.id },
-            data: { 
+            data: {
               googleId: profile.id,
               avatar: profile.photos && profile.photos[0] ? profile.photos[0].value : user.avatar
             }
@@ -124,8 +129,10 @@ router.post('/login', validateLogin, async (req, res) => {
 
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
-      // Fallback for seeded users with plain text passwords (for demo purposes only)
-      if (user.password !== password) {
+      // Only allow plain text password fallback in development (for seeded demo users)
+      if (process.env.NODE_ENV === 'development' && user.password === password) {
+        console.warn('⚠️  WARNING: Plain text password used - this is only allowed in development');
+      } else {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
     }

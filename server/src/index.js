@@ -1,5 +1,11 @@
 const express = require('express');
-require('dotenv').config({ path: '../private/.env.server' });
+
+// Load environment variables from file in local development only
+// In Vercel, environment variables are injected automatically
+if (!process.env.VERCEL) {
+    require('dotenv').config({ path: '../private/.env.server' });
+}
+
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -39,10 +45,19 @@ app.use(cors({
     origin: function (origin, callback) {
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
+
         if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
-            callback(null, true); // Allow for development, restrict in production
+            // In production, reject unauthorized origins for security
+            if (process.env.NODE_ENV === 'production') {
+                console.warn(`CORS: Rejected request from unauthorized origin: ${origin}`);
+                callback(new Error('Not allowed by CORS'));
+            } else {
+                // Allow in development for easier testing
+                console.log(`CORS: Allowing origin in development: ${origin}`);
+                callback(null, true);
+            }
         }
     },
     credentials: true
@@ -70,8 +85,15 @@ app.use(express.json({ limit: '10mb' })); // Limit payload size
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Session configuration for Passport
+// Validate SESSION_SECRET exists
+const SESSION_SECRET = process.env.SESSION_SECRET;
+if (!SESSION_SECRET) {
+    console.error('CRITICAL: SESSION_SECRET environment variable is required');
+    process.exit(1);
+}
+
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'your-session-secret-change-this',
+    secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: { secure: process.env.NODE_ENV === 'production' }
@@ -102,14 +124,14 @@ app.use('/api/departments', departmentRoutes);
 app.get('/api/stats', async (req, res) => {
     try {
         const userId = req.query.userId;
-        
+
         // If userId is provided, get user-specific stats, otherwise get global stats
         const whereClause = userId ? { userId: userId } : {};
-        
+
         const totalIssues = await prisma.issue.count({ where: whereClause });
         const resolvedIssues = await prisma.issue.count({ where: { ...whereClause, status: 'resolved' } });
         const pendingIssues = await prisma.issue.count({ where: { ...whereClause, status: 'pending' } });
-        
+
         res.json({
             totalIssues,
             resolvedIssues,
@@ -121,35 +143,35 @@ app.get('/api/stats', async (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  res.send('E-City API is running');
+    res.send('E-City API is running');
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  
-  // Multer errors
-  if (err instanceof multer.MulterError) {
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ error: 'File size too large. Maximum 5MB allowed.' });
+    console.error(err.stack);
+
+    // Multer errors
+    if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ error: 'File size too large. Maximum 5MB allowed.' });
+        }
+        return res.status(400).json({ error: err.message });
     }
-    return res.status(400).json({ error: err.message });
-  }
-  
-  // Custom errors
-  if (err.message.includes('Only image files')) {
-    return res.status(400).json({ error: err.message });
-  }
-  
-  // Default error
-  res.status(500).json({ error: 'Internal server error' });
+
+    // Custom errors
+    if (err.message.includes('Only image files')) {
+        return res.status(400).json({ error: err.message });
+    }
+
+    // Default error
+    res.status(500).json({ error: 'Internal server error' });
 });
 
 // Only start listener when run directly (not when imported by serverless entry)
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+    app.listen(PORT, () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+    });
 }
 
 module.exports = app;

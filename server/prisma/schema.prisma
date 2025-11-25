@@ -10,7 +10,7 @@ datasource db {
 model User {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   email     String   @unique
-  password  String   @default("123456")
+  password  String   // No default - must be explicitly set (hashed for regular users, empty for OAuth)
   name      String?
   role      String   @default("citizen") // citizen, admin
   googleId  String?  @unique

@@ -47,7 +47,7 @@ const ReportIssue = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!user) return addToast('Please login to report an issue', 'error');
-    
+
     setLoading(true);
     const data = new FormData();
     data.append('title', formData.title);
@@ -67,7 +67,8 @@ const ReportIssue = () => {
       navigate('/dashboard');
     } catch (error) {
       console.error('Error reporting issue:', error);
-      addToast('Failed to report issue.', 'error');
+      const errorMessage = error.response?.data?.error || 'Failed to report issue. Please try again.';
+      addToast(errorMessage, 'error');
     } finally {
       setLoading(false);
     }
@@ -167,9 +168,8 @@ const ReportIssue = () => {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors ${
-                loading ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
+              className={`w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors ${loading ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
             >
               {loading ? 'Submitting...' : 'Submit Report'}
             </button>

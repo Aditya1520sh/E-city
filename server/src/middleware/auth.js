@@ -1,5 +1,10 @@
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-change-this';
+
+// Fail fast if JWT_SECRET is not configured - prevents security vulnerabilities
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('CRITICAL: JWT_SECRET environment variable is required for security');
+}
 
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];

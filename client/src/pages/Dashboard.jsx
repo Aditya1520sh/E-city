@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Clock, CheckCircle, AlertCircle, Search, Filter, MapPin, ArrowRight, User, Megaphone, Calendar } from 'lucide-react';
 import UserLayout from '../layouts/UserLayout';
 import { useToast } from '../context/ToastContext';
+import { Analytics } from "@vercel/analytics/react";
 
 const Dashboard = ({ myReportsOnly = false }) => {
   const [issues, setIssues] = useState([]);
@@ -234,7 +235,7 @@ const Dashboard = ({ myReportsOnly = false }) => {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10"></div>
                 {issue.imageUrl ? (
                   <img 
-                    src={`${ROOT_BASE}${issue.imageUrl}`} 
+                    src={issue.imageUrl} 
                     alt={issue.title} 
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
@@ -279,6 +280,7 @@ const Dashboard = ({ myReportsOnly = false }) => {
           ))}
         </div>
       )}
+      <Analytics />
     </UserLayout>
   );
 };
