@@ -28,7 +28,18 @@ const rateLimit = require('express-rate-limit');
 const multer = require('multer');
 const session = require('express-session');
 const passport = require('passport');
+
+// Initialize Prisma with error handling for serverless
 const { PrismaClient } = require('@prisma/client');
+let prisma;
+try {
+    prisma = new PrismaClient({
+        log: process.env.VERCEL_ENV ? ['error'] : ['query', 'error', 'warn'],
+    });
+} catch (error) {
+    console.error('Failed to initialize Prisma Client:', error);
+    throw error;
+}
 const issueRoutes = require('./routes/issues');
 const authRoutes = require('./routes/auth');
 const eventRoutes = require('./routes/events');
@@ -43,7 +54,6 @@ const { startEventScheduler } = require('./services/eventScheduler');
 // path is already required above
 
 const app = express();
-const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3000;
 
 // Start the event scheduler only in non-serverless environment (checks every 24 hours)

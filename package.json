@@ -4,7 +4,8 @@
   "scripts": {
     "build": "npm run build --prefix client",
     "db:push": "npx prisma db push --schema=./server/prisma/schema.prisma",
-    "postinstall": "npx prisma generate --schema=./server/prisma/schema.prisma"
+    "postinstall": "prisma generate --schema=./server/prisma/schema.prisma",
+    "vercel-build": "prisma generate --schema=./server/prisma/schema.prisma && npm run build --prefix client"
   },
   "dependencies": {
     "@prisma/client": "^5.10.2",
@@ -26,6 +27,7 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "nodemon": "^3.1.0",
     "prisma": "^5.10.2"
   }
 }
