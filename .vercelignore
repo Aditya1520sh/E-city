@@ -1,7 +1,7 @@
 server/node_modules
 server/prisma/migrations
 server/uploads
-server/*.js
 .git
 .env.local
 *.md
+!VERCEL_DEPLOYMENT.md
