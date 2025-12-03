@@ -14,11 +14,18 @@ if (!process.env.VERCEL_ENV) {
     }
 } else {
     // In Vercel, ensure critical env vars exist
+    console.log('🚀 Starting in Vercel environment');
+    console.log('Environment check:');
+    console.log('  - DATABASE_URL:', process.env.DATABASE_URL ? '✅ Set' : '❌ Missing');
+    console.log('  - JWT_SECRET:', process.env.JWT_SECRET ? '✅ Set' : '❌ Missing');
+    console.log('  - CLIENT_URL:', process.env.CLIENT_URL ? '✅ Set' : '⚠️  Not set (will use default)');
+    console.log('  - NODE_ENV:', process.env.NODE_ENV || 'not set');
+    
     if (!process.env.DATABASE_URL) {
-        console.error('MISSING: DATABASE_URL');
+        console.error('❌ CRITICAL: DATABASE_URL is required');
     }
     if (!process.env.JWT_SECRET) {
-        console.error('MISSING: JWT_SECRET');
+        console.error('❌ CRITICAL: JWT_SECRET is required');
     }
 }
 
@@ -29,17 +36,8 @@ const multer = require('multer');
 const session = require('express-session');
 const passport = require('passport');
 
-// Initialize Prisma with error handling for serverless
-const { PrismaClient } = require('@prisma/client');
-let prisma;
-try {
-    prisma = new PrismaClient({
-        log: process.env.VERCEL_ENV ? ['error'] : ['query', 'error', 'warn'],
-    });
-} catch (error) {
-    console.error('Failed to initialize Prisma Client:', error);
-    throw error;
-}
+// Use shared Prisma instance
+const prisma = require('./config/prisma');
 const issueRoutes = require('./routes/issues');
 const authRoutes = require('./routes/auth');
 const eventRoutes = require('./routes/events');
@@ -146,6 +144,20 @@ if (!process.env.VERCEL_ENV) {
 
 // Apply general rate limiting to all routes
 app.use(generalLimiter);
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+    res.json({ 
+        status: 'ok', 
+        timestamp: new Date().toISOString(),
+        env: {
+            hasDatabase: !!process.env.DATABASE_URL,
+            hasJWT: !!process.env.JWT_SECRET,
+            nodeEnv: process.env.NODE_ENV
+        }
+    });
+});
+
 if (process.env.VERCEL) {
     app.use('/uploads', express.static('/tmp'));
 } else {

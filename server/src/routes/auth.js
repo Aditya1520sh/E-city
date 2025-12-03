@@ -1,18 +1,19 @@
 const express = require('express');
-const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const prisma = require('../config/prisma');
 
-const prisma = new PrismaClient();
 const router = express.Router();
 
-// Fail fast if JWT_SECRET is not configured
+// Check JWT_SECRET is configured
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
-  throw new Error('CRITICAL: JWT_SECRET environment variable is required for security');
+  console.error('❌ CRITICAL: JWT_SECRET environment variable is not set');
+  console.error('Authentication endpoints will return 503 errors');
+  console.error('Please set JWT_SECRET in Vercel environment variables');
 }
 
 // Configure Google OAuth Strategy (only if credentials are provided)
@@ -89,6 +90,10 @@ const validateLogin = [
 ];
 
 router.post('/register', validateRegister, async (req, res) => {
+  if (!JWT_SECRET) {
+    return res.status(503).json({ error: 'Authentication service not configured. Please contact administrator.' });
+  }
+  
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ error: errors.array()[0].msg });
@@ -112,6 +117,10 @@ router.post('/register', validateRegister, async (req, res) => {
 });
 
 router.post('/login', validateLogin, async (req, res) => {
+  if (!JWT_SECRET) {
+    return res.status(503).json({ error: 'Authentication service not configured. Please contact administrator.' });
+  }
+  
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ error: errors.array()[0].msg });
@@ -119,15 +128,23 @@ router.post('/login', validateLogin, async (req, res) => {
 
   const { email, password } = req.body;
   try {
+    console.log(`[LOGIN] Attempting login for email: ${email}`);
+
     const user = await prisma.user.findUnique({
       where: { email }
     });
 
+    console.log(`[LOGIN] User found: ${!!user}`);
     if (!user) {
+      console.log(`[LOGIN] No user found for email: ${email}`);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    console.log(`[LOGIN] User details - Role: ${user.role}, Has password: ${!!user.password}`);
+
     const validPassword = await bcrypt.compare(password, user.password);
+    console.log(`[LOGIN] Password validation result: ${validPassword}`);
+
     if (!validPassword) {
       // TEMPORARY: Allow plain text password fallback during migration period
       // TODO: Remove this after all passwords are hashed in database
@@ -135,10 +152,12 @@ router.post('/login', validateLogin, async (req, res) => {
         console.warn('⚠️ WARNING: Plain text password used - please hash database passwords ASAP!');
         console.warn(`User: ${user.email} is using plain text password`);
       } else {
+        console.log(`[LOGIN] Invalid password for user: ${email}`);
         return res.status(401).json({ error: 'Invalid credentials' });
       }
     }
 
+    console.log(`[LOGIN] Login successful for: ${email}`);
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       JWT_SECRET,
@@ -155,8 +174,15 @@ router.post('/login', validateLogin, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Login failed' });
+    console.error('[LOGIN ERROR] Full error details:');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Error object:', JSON.stringify(error, null, 2));
+    res.status(500).json({
+      error: 'Login failed',
+      details: process.env.NODE_ENV === 'production' ? undefined : error.message
+    });
   }
 });
 
