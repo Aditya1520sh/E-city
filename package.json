@@ -5,11 +5,10 @@
     "build": "npm run build --prefix client",
     "db:push": "npx prisma db push --schema=./server/prisma/schema.prisma",
     "postinstall": "prisma generate --schema=./server/prisma/schema.prisma",
-    "vercel-build": "prisma generate --schema=./server/prisma/schema.prisma && npm run build --prefix client"
+    "vercel-build": "cd api && npm install && prisma generate --schema=./prisma/schema.prisma && cd .. && npm run build --prefix client"
   },
   "dependencies": {
     "@prisma/client": "^5.10.2",
-    "@vercel/analytics": "^1.5.0",
     "bcryptjs": "^3.0.3",
     "@supabase/supabase-js": "^2.86.0",
     "cors": "^2.8.5",

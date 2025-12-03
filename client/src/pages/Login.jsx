@@ -41,7 +41,10 @@ const Login = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = `${window.location.origin}/api/auth/google`;
+    // Use the API base URL to construct the Google auth URL
+    const apiBase = import.meta.env.VITE_API_URL || 
+      (import.meta.env.DEV ? 'http://localhost:3000/api' : `${window.location.origin}/api`);
+    window.location.href = `${apiBase}/auth/google`;
   };
 
   const handleSubmit = async (e) => {
