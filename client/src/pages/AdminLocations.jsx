@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useToast } from '../context/ToastContext';
 import MapComponent from '../components/MapComponent';
 import AdminLayout from '../layouts/AdminLayout';
+import { API_BASE } from '../utils/axios';
 
 const AdminLocations = () => {
   const [locations, setLocations] = useState([]);
@@ -16,7 +17,6 @@ const AdminLocations = () => {
   });
   const { showToast } = useToast();
 
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
   useEffect(() => {
     fetchLocations();
   }, []);

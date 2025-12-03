@@ -13,8 +13,6 @@ const IssueDetails = () => {
   const [loading, setLoading] = useState(true);
   const user = JSON.parse(localStorage.getItem('user'));
 
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-  const ROOT_BASE = API_BASE.replace(/\/api$/, '');
   useEffect(() => {
     fetchIssue();
   }, [id]);

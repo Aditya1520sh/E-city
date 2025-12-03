@@ -15,41 +15,38 @@ const validateCreateEvent = [
   body('date').isISO8601().withMessage('Valid date is required'),
   body('location').trim().isLength({ min: 3, max: 200 }).withMessage('Location must be 3-200 characters'),
   body('organizer').trim().isLength({ min: 2, max: 100 }).withMessage('Organizer must be 2-100 characters'),
-  body('type').optional().isIn(['general', 'workshop', 'meeting', 'cleanup', 'festival']).withMessage('Invalid event type')
+  body('type').optional().isIn(['general', 'workshop', 'meeting', 'cleanup', 'festival', 'cultural', 'educational', 'healthcare']).withMessage('Invalid event type')
 ];
 
 // Get all events
 router.get('/', async (req, res) => {
-  const userId = req.user.id || req.user.userId;
-  console.log(`Fetching events for User ${userId}`);
-  
   try {
+    const userId = req.user?.id || req.user?.userId;
+
     const events = await prisma.event.findMany({
-      orderBy: { date: 'asc' },
-      include: {
-        participants: {
-          where: { id: userId },
-          select: { id: true }
-        },
-        _count: {
-          select: { participants: true }
-        }
-      }
+      orderBy: { date: 'asc' }
     });
 
     const formattedEvents = events.map(event => {
-      const isJoined = event.participants.length > 0;
-      console.log(`Event ${event.id}: isJoined=${isJoined} (participants found: ${event.participants.length})`);
+      const isJoined = userId && event.participantIds ? event.participantIds.includes(userId) : false;
       return {
-        ...event,
+        id: event.id,
+        title: event.title,
+        description: event.description,
+        date: event.date,
+        location: event.location,
+        organizer: event.organizer,
+        type: event.type,
+        imageUrl: event.imageUrl,
+        createdAt: event.createdAt,
         isJoined,
-        participantCount: event._count.participants
+        participantCount: event.participantIds ? event.participantIds.length : 0
       };
     });
 
     res.json(formattedEvents);
   } catch (error) {
-    console.error(error);
+    console.error('Error fetching events:', error);
     res.status(500).json({ error: 'Error fetching events' });
   }
 });
@@ -59,22 +56,32 @@ router.post('/:id/join', async (req, res) => {
   const { id } = req.params;
   const userId = req.user.id || req.user.userId;
 
-  console.log(`User ${userId} (from token: ${JSON.stringify(req.user)}) attempting to join event ${id}`);
-
   if (!userId) {
     return res.status(400).json({ error: 'User ID not found in token' });
   }
 
   try {
+    const event = await prisma.event.findUnique({ where: { id } });
+    
+    if (!event) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    const participantIds = event.participantIds || [];
+    
+    if (participantIds.includes(userId)) {
+      return res.status(400).json({ error: 'Already joined this event' });
+    }
+
     await prisma.event.update({
-      where: { id: id },
+      where: { id },
       data: {
-        participants: {
-          connect: { id: userId }
+        participantIds: {
+          push: userId
         }
       }
     });
-    console.log(`User ${userId} joined event ${id} successfully`);
+    
     res.json({ message: 'Joined event successfully' });
   } catch (error) {
     console.error('Error joining event:', error);
@@ -88,14 +95,22 @@ router.post('/:id/leave', async (req, res) => {
   const userId = req.user.id || req.user.userId;
 
   try {
+    const event = await prisma.event.findUnique({ where: { id } });
+    
+    if (!event) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    const participantIds = event.participantIds || [];
+    const updatedParticipants = participantIds.filter(pId => pId !== userId);
+
     await prisma.event.update({
-      where: { id: id },
+      where: { id },
       data: {
-        participants: {
-          disconnect: { id: userId }
-        }
+        participantIds: updatedParticipants
       }
     });
+    
     res.json({ message: 'Left event successfully' });
   } catch (error) {
     console.error('Error leaving event:', error);

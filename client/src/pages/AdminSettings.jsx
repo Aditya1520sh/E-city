@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '../context/ToastContext';
 import AdminLayout from '../layouts/AdminLayout';
+import axiosInstance, { API_BASE } from '../utils/axios';
 
 const AdminSettings = () => {
   const [settings, setSettings] = useState([]);
   const { showToast } = useToast();
-
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
   useEffect(() => {
     fetchSettings();
   }, []);

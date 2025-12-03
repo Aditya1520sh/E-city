@@ -1,7 +1,7 @@
 {
-  "name": "E-Delhi",
-  "short_name": "E-Delhi",
-  "description": "Smart City Management System for Delhi",
+  "name": "E-City",
+  "short_name": "E-City",
+  "description": "Smart City Management System",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

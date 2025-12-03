@@ -192,4 +192,23 @@ router.get('/department-performance', async (req, res) => {
   }
 });
 
+const { getExternalApi } = require('../config/externalApi');
+
+// External stats via server env-configured API (optional)
+router.get('/stats', async (req, res) => {
+  try {
+    const api = getExternalApi();
+    const { data } = await api.get('/stats');
+    res.json(data);
+  } catch (err) {
+    console.error('Analytics stats error:', err?.message || err);
+    // Return empty stats if external API not configured
+    if (err.message?.includes('Missing API_BASE_URL')) {
+      return res.json({ message: 'External API not configured', data: {} });
+    }
+    const status = err?.response?.status || 500;
+    res.status(status).json({ error: 'Failed to fetch external stats' });
+  }
+});
+
 module.exports = router;

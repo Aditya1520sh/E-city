@@ -6,7 +6,7 @@ import axios from 'axios';
 const GoogleCallback = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { addToast } = useToast();
+  const { showToast } = useToast();
 
   useEffect(() => {
     const token = searchParams.get('token');
@@ -15,14 +15,14 @@ const GoogleCallback = () => {
     if (token && userStr) {
       try {
         const user = JSON.parse(decodeURIComponent(userStr));
-        
+
         // Store token and user
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
         axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
         // Show success message
-        addToast(`Welcome back, ${user.name}!`, 'success');
+        showToast(`Welcome back, ${user.name}!`, 'success');
 
         // Redirect based on role
         setTimeout(() => {
@@ -34,14 +34,14 @@ const GoogleCallback = () => {
         }, 500);
       } catch (error) {
         console.error('Error processing Google login:', error);
-        addToast('Failed to complete Google login', 'error');
+        showToast('Failed to complete Google login', 'error');
         navigate('/login', { replace: true });
       }
     } else {
-      addToast('Google login failed', 'error');
+      showToast('Google login failed', 'error');
       navigate('/login', { replace: true });
     }
-  }, [searchParams, navigate, addToast]);
+  }, [searchParams, navigate, showToast]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-slate-900">

@@ -21,10 +21,10 @@ router.get('/', async (req, res) => {
 
 // Create department
 router.post('/', async (req, res) => {
-  const { name, head, contact, email, location, description } = req.body;
+  const { name, head, contact, email, location, description, imageUrl } = req.body;
   try {
     const department = await prisma.department.create({
-      data: { name, head, contact, email, location, description }
+      data: { name, head, contact, email, location, description, imageUrl }
     });
     res.json(department);
   } catch (error) {
@@ -35,11 +35,11 @@ router.post('/', async (req, res) => {
 // Update department
 router.put('/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, head, contact, email, location, description } = req.body;
+  const { name, head, contact, email, location, description, imageUrl } = req.body;
   try {
     const department = await prisma.department.update({
       where: { id: id },
-      data: { name, head, contact, email, location, description }
+      data: { name, head, contact, email, location, description, imageUrl }
     });
     res.json(department);
   } catch (error) {

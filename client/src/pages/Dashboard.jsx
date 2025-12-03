@@ -19,9 +19,6 @@ const Dashboard = ({ myReportsOnly = false }) => {
   useEffect(() => {
     setFilters(prev => ({ ...prev, myIssues: myReportsOnly }));
   }, [myReportsOnly]);
-
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-  const ROOT_BASE = API_BASE.replace(/\/api$/, '');
   useEffect(() => {
     fetchData();
   }, [filters]);

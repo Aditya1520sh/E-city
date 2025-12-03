@@ -20,7 +20,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: process.env.GOOGLE_CALLBACK_URL || "http://localhost:3000/api/auth/google/callback"
+    callbackURL: process.env.GOOGLE_CALLBACK_URL || (process.env.VERCEL_ENV ? "https://aakrti.vercel.app/api/auth/google/callback" : "http://localhost:3000/api/auth/google/callback")
   },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -78,7 +78,7 @@ passport.deserializeUser(async (id, done) => {
 // Validation middleware
 const validateRegister = [
   body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
-  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('password').isLength({ min: 4 }).withMessage('Password must be at least 4 characters'),
   body('name').trim().isLength({ min: 2, max: 100 }).withMessage('Name must be 2-100 characters'),
   body('role').optional().isIn(['citizen', 'admin']).withMessage('Invalid role')
 ];
@@ -129,9 +129,11 @@ router.post('/login', validateLogin, async (req, res) => {
 
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
-      // Only allow plain text password fallback in development (for seeded demo users)
-      if (process.env.NODE_ENV === 'development' && user.password === password) {
-        console.warn('⚠️  WARNING: Plain text password used - this is only allowed in development');
+      // TEMPORARY: Allow plain text password fallback during migration period
+      // TODO: Remove this after all passwords are hashed in database
+      if (user.password === password) {
+        console.warn('⚠️ WARNING: Plain text password used - please hash database passwords ASAP!');
+        console.warn(`User: ${user.email} is using plain text password`);
       } else {
         return res.status(401).json({ error: 'Invalid credentials' });
       }
@@ -182,7 +184,8 @@ router.get('/google/callback',
     );
 
     // Redirect to frontend with token
-    res.redirect(`${process.env.CLIENT_URL || 'http://localhost:5173'}/auth/google/callback?token=${token}&user=${encodeURIComponent(JSON.stringify({
+    const clientURL = process.env.CLIENT_URL || (process.env.VERCEL_ENV ? 'https://aakrti.vercel.app' : 'http://localhost:5173');
+    res.redirect(`${clientURL}/auth/google/callback?token=${token}&user=${encodeURIComponent(JSON.stringify({
       id: req.user.id,
       email: req.user.email,
       name: req.user.name,

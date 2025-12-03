@@ -5,6 +5,7 @@ import Particles from "react-tsparticles";
 import { loadSlim } from "tsparticles-slim";
 import { motion } from "framer-motion";
 import FlipCard from '../components/FlipCard';
+import smartCityHubImg from '../assets/smart_city_hub.png';
 
 
 
@@ -38,7 +39,7 @@ const Home = () => {
           fetch('https://api.open-meteo.com/v1/forecast?latitude=28.6139&longitude=77.2090&current=temperature_2m'),
           fetch('https://air-quality-api.open-meteo.com/v1/air-quality?latitude=28.6139&longitude=77.2090&current=us_aqi')
         ]);
-        
+
         if (!weatherRes.ok || !aqiRes.ok) throw new Error('Network response was not ok');
 
         const weatherData = await weatherRes.json();
@@ -150,38 +151,38 @@ const Home = () => {
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">
         {/* 1. Interactive Particle Network Background */}
         <Particles
-            id="tsparticles"
-            init={particlesInit}
-            options={{
+          id="tsparticles"
+          init={particlesInit}
+          options={{
             background: { color: { value: "transparent" } },
             fpsLimit: 120,
             interactivity: {
-                events: {
+              events: {
                 onHover: { enable: true, mode: "grab" }, // Connects particles on hover
                 onClick: { enable: true, mode: "push" },
-                },
-                modes: {
+              },
+              modes: {
                 grab: { distance: 200, line_linked: { opacity: 1 } },
-                },
+              },
             },
             particles: {
-                color: { value: "#60A5FA" }, // Blue-400
-                links: {
+              color: { value: "#60A5FA" }, // Blue-400
+              links: {
                 color: "#3B82F6", // Blue-500
                 distance: 150,
                 enable: true,
                 opacity: 0.3,
                 width: 1,
-                },
-                move: { enable: true, speed: 1.5 },
-                number: { density: { enable: true, area: 800 }, value: 80 },
-                opacity: { value: 0.5 },
-                size: { value: { min: 1, max: 3 } },
+              },
+              move: { enable: true, speed: 1.5 },
+              number: { density: { enable: true, area: 800 }, value: 80 },
+              opacity: { value: 0.5 },
+              size: { value: { min: 1, max: 3 } },
             },
-            }}
-            className="absolute inset-0 z-0"
+          }}
+          className="absolute inset-0 z-0"
         />
-        
+
         <div className="container mx-auto px-4 text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -189,34 +190,34 @@ const Home = () => {
             transition={{ duration: 0.8 }}
           >
             <h1 className="text-6xl md:text-8xl font-bold text-white mb-6 tracking-tighter">
-              E-DELHI <span className="text-blue-400">2.0</span>
+              E-CITY <span className="text-blue-400">2.0</span>
             </h1>
             <p className="text-xl text-blue-100/80 mb-12 max-w-2xl mx-auto">
               The operating system for your city. Connected, Intelligent, Responsive.
             </p>
           </motion.div>
 
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 1, duration: 1 }}
-                className="flex flex-col sm:flex-row gap-4 items-center justify-center"
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1, duration: 1 }}
+            className="flex flex-col sm:flex-row gap-4 items-center justify-center"
+          >
+            <Link
+              to="/login"
+              className="inline-flex items-center bg-blue-600 text-white font-bold py-4 px-10 rounded-full hover:bg-blue-500 transition-all transform hover:scale-110 active:scale-95 shadow-lg shadow-blue-500/25 duration-300 group"
             >
-                <Link
-                to="/login"
-                className="inline-flex items-center bg-blue-600 text-white font-bold py-4 px-10 rounded-full hover:bg-blue-500 transition-all transform hover:scale-110 active:scale-95 shadow-lg shadow-blue-500/25 duration-300 group"
-                >
-                Login to Contribute
-                <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
-                </Link>
-                <a
-                href="#features"
-                className="inline-flex items-center bg-white/10 backdrop-blur-sm text-white font-bold py-4 px-10 rounded-full hover:bg-white/20 transition-all transform hover:scale-110 active:scale-95 shadow-lg duration-300 group border border-white/20"
-                >
-                Learn More
-                <ChevronDown className="ml-2 group-hover:translate-y-1 transition-transform" />
-                </a>
-            </motion.div>
+              Login to Contribute
+              <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+            </Link>
+            <a
+              href="#features"
+              className="inline-flex items-center bg-white/10 backdrop-blur-sm text-white font-bold py-4 px-10 rounded-full hover:bg-white/20 transition-all transform hover:scale-110 active:scale-95 shadow-lg duration-300 group border border-white/20"
+            >
+              Learn More
+              <ChevronDown className="ml-2 group-hover:translate-y-1 transition-transform" />
+            </a>
+          </motion.div>
         </div>
 
         {/* Scroll indicator */}
@@ -269,164 +270,164 @@ const Home = () => {
       {/* City Meters Section */}
       <section className="py-16 bg-slate-50 dark:bg-slate-900 transition-colors duration-200">
         <div className="container mx-auto px-4">
-            <FadeInSection>
-              <div className="text-center mb-12">
-                  <div className="inline-flex items-center space-x-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4 animate-pulse">
-                      <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-                      <span>Live Data</span>
-                  </div>
-                  <h2 className="text-3xl font-bold text-slate-800 dark:text-white">Live City Vitals</h2>
-                  <p className="text-slate-500 dark:text-slate-400 mt-2">Real-time monitoring of our city's health</p>
+          <FadeInSection>
+            <div className="text-center mb-12">
+              <div className="inline-flex items-center space-x-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4 animate-pulse">
+                <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                <span>Live Data</span>
               </div>
-            </FadeInSection>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                {/* AQI Meter */}
-                <FadeInSection delay={100}>
-                  <FlipCard
-                    height="h-56"
-                    frontContent={
-                      <div className={`group bg-white dark:bg-slate-800 p-3 rounded-2xl shadow-lg border-2 ${aqiStatus.border} flex flex-col items-center justify-center transform ${aqiStatus.hoverBorder} transition-all duration-300 h-full relative overflow-hidden`}>
-                          <div className={`absolute inset-0 bg-gradient-to-br ${aqiStatus.gradient} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
-                          <div className={`${aqiStatus.bg} p-3 rounded-full ${aqiStatus.color} mb-3 group-hover:scale-110 transition-transform duration-300 relative z-10 shadow-sm`}>
-                              <Wind size={28} />
-                          </div>
-                          <div className="text-3xl font-extrabold text-slate-800 dark:text-white relative z-10 tracking-tight">{weather.aqi}</div>
-                          <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1 relative z-10">AQI ({aqiStatus.text})</div>
-                      </div>
-                    }
-                    backContent={
-                      <div className={`bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-xl border-2 ${aqiStatus.border} flex flex-col items-center justify-center h-full text-center relative overflow-hidden`}>
-                          <div className={`absolute inset-0 ${aqiStatus.bg} opacity-20`}></div>
-                          <h4 className="text-base font-bold text-slate-900 dark:text-white mb-2 relative z-10">Air Quality Details</h4>
-                          <div className="space-y-1 text-xs text-slate-700 dark:text-slate-200 w-full relative z-10">
-                              <div className="flex justify-between items-center px-2 py-1 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-600">
-                                <span className="font-medium">PM2.5</span> <span className="font-bold">45 µg/m³</span>
-                              </div>
-                              <div className="flex justify-between items-center px-2 py-1 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-600">
-                                <span className="font-medium">PM10</span> <span className="font-bold">85 µg/m³</span>
-                              </div>
-                              <div className="flex justify-between items-center px-2 py-1 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-600">
-                                <span className="font-medium">O3</span> <span className="font-bold text-green-600 dark:text-green-400">Good</span>
-                              </div>
-                          </div>
-                      </div>
-                    }
-                  />
-                </FadeInSection>
-
-                {/* Temperature Meter */}
-                <FadeInSection delay={200}>
-                  <FlipCard
-                    height="h-56"
-                    frontContent={
-                      <div className={`group bg-white dark:bg-slate-800 p-3 rounded-2xl shadow-lg border-2 ${tempStatus.border} flex flex-col items-center justify-center transform ${tempStatus.hoverBorder} transition-all duration-300 h-full relative overflow-hidden`}>
-                          <div className={`absolute inset-0 bg-gradient-to-br ${tempStatus.gradient} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
-                          <div className={`${tempStatus.bg} p-3 rounded-full ${tempStatus.color} mb-3 group-hover:scale-110 transition-transform duration-300 relative z-10 shadow-sm`}>
-                              <Thermometer size={28} />
-                          </div>
-                          <div className="text-3xl font-extrabold text-slate-800 dark:text-white relative z-10 tracking-tight">{weather.temp}°C</div>
-                          <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1 relative z-10">Temperature</div>
-                      </div>
-                    }
-                    backContent={
-                      <div className={`bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-xl border-2 ${tempStatus.border} flex flex-col items-center justify-center h-full text-center relative overflow-hidden`}>
-                          <div className={`absolute inset-0 ${tempStatus.bg} opacity-20`}></div>
-                          <h4 className="text-base font-bold text-slate-900 dark:text-white mb-2 relative z-10">Forecast</h4>
-                          <div className="space-y-1 text-xs text-slate-700 dark:text-slate-200 w-full relative z-10">
-                              <div className="flex justify-between items-center px-2 py-1 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-600">
-                                <span className="font-medium">Humidity</span> <span className="font-bold">45%</span>
-                              </div>
-                              <div className="flex justify-between items-center px-2 py-1 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-600">
-                                <span className="font-medium">Wind</span> <span className="font-bold">12 km/h</span>
-                              </div>
-                              <div className="flex justify-between items-center px-2 py-1 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-600">
-                                <span className="font-medium">Rain</span> <span className="font-bold">0%</span>
-                              </div>
-                          </div>
-                      </div>
-                    }
-                  />
-                </FadeInSection>
-
-                {/* Traffic Meter */}
-                <FadeInSection delay={300}>
-                  <FlipCard
-                    height="h-56"
-                    frontContent={
-                      <div className={`group bg-white dark:bg-slate-800 p-3 rounded-2xl shadow-lg border-2 ${trafficStatus.border} flex flex-col items-center justify-center transform ${trafficStatus.hoverBorder} transition-all duration-300 h-full relative overflow-hidden`}>
-                          <div className={`absolute inset-0 bg-gradient-to-br ${trafficStatus.gradient} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
-                          <div className={`${trafficStatus.bg} p-3 rounded-full ${trafficStatus.color} mb-3 group-hover:scale-110 transition-transform duration-300 relative z-10 shadow-sm`}>
-                              <Car size={28} />
-                          </div>
-                          <div className="text-3xl font-extrabold text-slate-800 dark:text-white relative z-10 tracking-tight">Heavy</div>
-                          <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1 relative z-10">Traffic Status</div>
-                      </div>
-                    }
-                    backContent={
-                      <div className={`bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-xl border-2 ${trafficStatus.border} flex flex-col items-center justify-center h-full text-center relative overflow-hidden`}>
-                          <div className={`absolute inset-0 ${trafficStatus.bg} opacity-20`}></div>
-                          <h4 className="text-base font-bold text-slate-900 dark:text-white mb-2 relative z-10">Hotspots</h4>
-                          <div className="space-y-1 text-xs text-slate-700 dark:text-slate-200 w-full relative z-10">
-                              <div className="flex justify-between items-center px-2 py-1 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-600">
-                                <span className="font-medium">ITO</span> <span className="font-bold text-red-500">Heavy</span>
-                              </div>
-                              <div className="flex justify-between items-center px-2 py-1 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-600">
-                                <span className="font-medium">DND</span> <span className="font-bold text-yellow-500">Moderate</span>
-                              </div>
-                              <div className="flex justify-between items-center px-2 py-1 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-600">
-                                <span className="font-medium">Ring Rd</span> <span className="font-bold text-green-500">Clear</span>
-                              </div>
-                          </div>
-                      </div>
-                    }
-                  />
-                </FadeInSection>
-
-                {/* Water Level Meter */}
-                <FadeInSection delay={400}>
-                  <FlipCard
-                    height="h-56"
-                    frontContent={
-                      <div className={`group bg-white dark:bg-slate-800 p-3 rounded-2xl shadow-lg border-2 ${waterStatus.border} flex flex-col items-center justify-center transform ${waterStatus.hoverBorder} transition-all duration-300 h-full relative overflow-hidden`}>
-                          <div className={`absolute inset-0 bg-gradient-to-br ${waterStatus.gradient} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
-                          <div className={`${waterStatus.bg} p-3 rounded-full ${waterStatus.color} mb-3 group-hover:scale-110 transition-transform duration-300 relative z-10 shadow-sm`}>
-                              <Droplets size={28} />
-                          </div>
-                          <div className="text-3xl font-extrabold text-slate-800 dark:text-white relative z-10 tracking-tight">Normal</div>
-                          <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1 relative z-10">Water Level</div>
-                      </div>
-                    }
-                    backContent={
-                      <div className={`bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-xl border-2 ${waterStatus.border} flex flex-col items-center justify-center h-full text-center relative overflow-hidden`}>
-                          <div className={`absolute inset-0 ${waterStatus.bg} opacity-20`}></div>
-                          <h4 className="text-base font-bold text-slate-900 dark:text-white mb-2 relative z-10">Yamuna Level</h4>
-                          <div className="text-2xl font-black text-slate-800 dark:text-white mb-1 relative z-10">204.5m</div>
-                          <div className="text-xs font-medium text-slate-600 dark:text-slate-300 relative z-10">
-                            Current Status: <span className="font-bold text-blue-500">Safe</span>
-                          </div>
-                          <div className="mt-3 w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 relative z-10">
-                            <div className="bg-blue-500 h-2 rounded-full" style={{ width: '45%' }}></div>
-                          </div>
-                      </div>
-                    }
-                  />
-                </FadeInSection>
+              <h2 className="text-3xl font-bold text-slate-800 dark:text-white">Live City Vitals</h2>
+              <p className="text-slate-500 dark:text-slate-400 mt-2">Real-time monitoring of our city's health</p>
             </div>
+          </FadeInSection>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {/* AQI Meter */}
+            <FadeInSection delay={100}>
+              <FlipCard
+                height="h-56"
+                frontContent={
+                  <div className={`group bg-white dark:bg-slate-800 p-3 rounded-2xl shadow-lg border-2 ${aqiStatus.border} flex flex-col items-center justify-center transform ${aqiStatus.hoverBorder} transition-all duration-300 h-full relative overflow-hidden`}>
+                    <div className={`absolute inset-0 bg-gradient-to-br ${aqiStatus.gradient} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
+                    <div className={`${aqiStatus.bg} p-3 rounded-full ${aqiStatus.color} mb-3 group-hover:scale-110 transition-transform duration-300 relative z-10 shadow-sm`}>
+                      <Wind size={28} />
+                    </div>
+                    <div className="text-3xl font-extrabold text-slate-800 dark:text-white relative z-10 tracking-tight">{weather.aqi}</div>
+                    <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1 relative z-10">AQI ({aqiStatus.text})</div>
+                  </div>
+                }
+                backContent={
+                  <div className={`bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-xl border-2 ${aqiStatus.border} flex flex-col items-center justify-center h-full text-center relative overflow-hidden`}>
+                    <div className={`absolute inset-0 ${aqiStatus.bg} opacity-20`}></div>
+                    <h4 className="text-base font-bold text-slate-900 dark:text-white mb-2 relative z-10">Air Quality Details</h4>
+                    <div className="space-y-1 text-xs text-slate-700 dark:text-slate-200 w-full relative z-10">
+                      <div className="flex justify-between items-center px-2 py-1 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-600">
+                        <span className="font-medium">PM2.5</span> <span className="font-bold">45 µg/m³</span>
+                      </div>
+                      <div className="flex justify-between items-center px-2 py-1 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-600">
+                        <span className="font-medium">PM10</span> <span className="font-bold">85 µg/m³</span>
+                      </div>
+                      <div className="flex justify-between items-center px-2 py-1 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-600">
+                        <span className="font-medium">O3</span> <span className="font-bold text-green-600 dark:text-green-400">Good</span>
+                      </div>
+                    </div>
+                  </div>
+                }
+              />
+            </FadeInSection>
+
+            {/* Temperature Meter */}
+            <FadeInSection delay={200}>
+              <FlipCard
+                height="h-56"
+                frontContent={
+                  <div className={`group bg-white dark:bg-slate-800 p-3 rounded-2xl shadow-lg border-2 ${tempStatus.border} flex flex-col items-center justify-center transform ${tempStatus.hoverBorder} transition-all duration-300 h-full relative overflow-hidden`}>
+                    <div className={`absolute inset-0 bg-gradient-to-br ${tempStatus.gradient} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
+                    <div className={`${tempStatus.bg} p-3 rounded-full ${tempStatus.color} mb-3 group-hover:scale-110 transition-transform duration-300 relative z-10 shadow-sm`}>
+                      <Thermometer size={28} />
+                    </div>
+                    <div className="text-3xl font-extrabold text-slate-800 dark:text-white relative z-10 tracking-tight">{weather.temp}°C</div>
+                    <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1 relative z-10">Temperature</div>
+                  </div>
+                }
+                backContent={
+                  <div className={`bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-xl border-2 ${tempStatus.border} flex flex-col items-center justify-center h-full text-center relative overflow-hidden`}>
+                    <div className={`absolute inset-0 ${tempStatus.bg} opacity-20`}></div>
+                    <h4 className="text-base font-bold text-slate-900 dark:text-white mb-2 relative z-10">Forecast</h4>
+                    <div className="space-y-1 text-xs text-slate-700 dark:text-slate-200 w-full relative z-10">
+                      <div className="flex justify-between items-center px-2 py-1 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-600">
+                        <span className="font-medium">Humidity</span> <span className="font-bold">45%</span>
+                      </div>
+                      <div className="flex justify-between items-center px-2 py-1 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-600">
+                        <span className="font-medium">Wind</span> <span className="font-bold">12 km/h</span>
+                      </div>
+                      <div className="flex justify-between items-center px-2 py-1 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-600">
+                        <span className="font-medium">Rain</span> <span className="font-bold">0%</span>
+                      </div>
+                    </div>
+                  </div>
+                }
+              />
+            </FadeInSection>
+
+            {/* Traffic Meter */}
+            <FadeInSection delay={300}>
+              <FlipCard
+                height="h-56"
+                frontContent={
+                  <div className={`group bg-white dark:bg-slate-800 p-3 rounded-2xl shadow-lg border-2 ${trafficStatus.border} flex flex-col items-center justify-center transform ${trafficStatus.hoverBorder} transition-all duration-300 h-full relative overflow-hidden`}>
+                    <div className={`absolute inset-0 bg-gradient-to-br ${trafficStatus.gradient} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
+                    <div className={`${trafficStatus.bg} p-3 rounded-full ${trafficStatus.color} mb-3 group-hover:scale-110 transition-transform duration-300 relative z-10 shadow-sm`}>
+                      <Car size={28} />
+                    </div>
+                    <div className="text-3xl font-extrabold text-slate-800 dark:text-white relative z-10 tracking-tight">Heavy</div>
+                    <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1 relative z-10">Traffic Status</div>
+                  </div>
+                }
+                backContent={
+                  <div className={`bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-xl border-2 ${trafficStatus.border} flex flex-col items-center justify-center h-full text-center relative overflow-hidden`}>
+                    <div className={`absolute inset-0 ${trafficStatus.bg} opacity-20`}></div>
+                    <h4 className="text-base font-bold text-slate-900 dark:text-white mb-2 relative z-10">Hotspots</h4>
+                    <div className="space-y-1 text-xs text-slate-700 dark:text-slate-200 w-full relative z-10">
+                      <div className="flex justify-between items-center px-2 py-1 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-600">
+                        <span className="font-medium">City Center</span> <span className="font-bold text-red-500">Heavy</span>
+                      </div>
+                      <div className="flex justify-between items-center px-2 py-1 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-600">
+                        <span className="font-medium">Expressway</span> <span className="font-bold text-yellow-500">Moderate</span>
+                      </div>
+                      <div className="flex justify-between items-center px-2 py-1 bg-slate-50 dark:bg-slate-700/50 rounded-lg border border-slate-100 dark:border-slate-600">
+                        <span className="font-medium">Ring Road</span> <span className="font-bold text-green-500">Clear</span>
+                      </div>
+                    </div>
+                  </div>
+                }
+              />
+            </FadeInSection>
+
+            {/* Water Level Meter */}
+            <FadeInSection delay={400}>
+              <FlipCard
+                height="h-56"
+                frontContent={
+                  <div className={`group bg-white dark:bg-slate-800 p-3 rounded-2xl shadow-lg border-2 ${waterStatus.border} flex flex-col items-center justify-center transform ${waterStatus.hoverBorder} transition-all duration-300 h-full relative overflow-hidden`}>
+                    <div className={`absolute inset-0 bg-gradient-to-br ${waterStatus.gradient} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
+                    <div className={`${waterStatus.bg} p-3 rounded-full ${waterStatus.color} mb-3 group-hover:scale-110 transition-transform duration-300 relative z-10 shadow-sm`}>
+                      <Droplets size={28} />
+                    </div>
+                    <div className="text-3xl font-extrabold text-slate-800 dark:text-white relative z-10 tracking-tight">Normal</div>
+                    <div className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1 relative z-10">Water Level</div>
+                  </div>
+                }
+                backContent={
+                  <div className={`bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-xl border-2 ${waterStatus.border} flex flex-col items-center justify-center h-full text-center relative overflow-hidden`}>
+                    <div className={`absolute inset-0 ${waterStatus.bg} opacity-20`}></div>
+                    <h4 className="text-base font-bold text-slate-900 dark:text-white mb-2 relative z-10">River Level</h4>
+                    <div className="text-2xl font-black text-slate-800 dark:text-white mb-1 relative z-10">204.5m</div>
+                    <div className="text-xs font-medium text-slate-600 dark:text-slate-300 relative z-10">
+                      Current Status: <span className="font-bold text-blue-500">Safe</span>
+                    </div>
+                    <div className="mt-3 w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 relative z-10">
+                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: '45%' }}></div>
+                    </div>
+                  </div>
+                }
+              />
+            </FadeInSection>
+          </div>
         </div>
       </section>
 
-      {/* Delhi Heritage & Pride Section */}
+      {/* City of Tomorrow Section */}
       <section className="py-20 bg-white dark:bg-slate-800 overflow-hidden transition-colors duration-200">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center gap-12">
             <div className="md:w-1/2 space-y-6">
               <FadeInSection>
                 <h2 className="text-4xl font-bold text-slate-900 dark:text-white leading-tight">
-                  Preserving the <span className="text-blue-600 dark:text-blue-400">Heart of India</span>
+                  Building the <span className="text-blue-600 dark:text-blue-400">City of Tomorrow</span>
                 </h2>
                 <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed mt-4">
-                  Delhi is not just a capital; it's an emotion. From the timeless corridors of Connaught Place to the serene Lotus Temple, our city is a blend of history and modernity.
+                  Experience the perfect harmony of technology and sustainability. Our smart city hub integrates cutting-edge innovation with eco-friendly living to create a seamless urban experience.
                 </p>
                 <div className="space-y-4 mt-6">
                   <div className="flex items-start space-x-4">
@@ -434,8 +435,8 @@ const Home = () => {
                       <Building2 size={20} />
                     </div>
                     <div>
-                      <h4 className="font-bold text-slate-800 dark:text-white">Smart City Initiatives</h4>
-                      <p className="text-slate-500 dark:text-slate-400 text-sm">Free Wi-Fi hotspots, smart street lighting, and digital governance.</p>
+                      <h4 className="font-bold text-slate-800 dark:text-white">Smart Infrastructure</h4>
+                      <p className="text-slate-500 dark:text-slate-400 text-sm">Intelligent transport systems, energy-efficient buildings, and seamless connectivity.</p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-4">
@@ -443,8 +444,8 @@ const Home = () => {
                       <CheckCircle size={20} />
                     </div>
                     <div>
-                      <h4 className="font-bold text-slate-800 dark:text-white">Green Cover Expansion</h4>
-                      <p className="text-slate-500 dark:text-slate-400 text-sm">Plantation drives aiming to increase Delhi's green cover to 25% by 2025.</p>
+                      <h4 className="font-bold text-slate-800 dark:text-white">Sustainable Living</h4>
+                      <p className="text-slate-500 dark:text-slate-400 text-sm">Vertical gardens, renewable energy integration, and zero-carbon initiatives.</p>
                     </div>
                   </div>
                 </div>
@@ -455,14 +456,14 @@ const Home = () => {
                 <div className="absolute -top-10 -right-10 w-64 h-64 bg-blue-100 dark:bg-blue-900/20 rounded-full opacity-50 blur-3xl animate-pulse-slow"></div>
                 <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-purple-100 dark:bg-purple-900/20 rounded-full opacity-50 blur-3xl animate-pulse-slow delay-700"></div>
                 <div className="relative bg-gradient-to-br from-slate-100 to-white dark:from-slate-700 dark:to-slate-800 p-2 rounded-2xl shadow-2xl rotate-2 hover:rotate-0 transition-transform duration-500 group">
-                  <img 
-                    src="https://images.unsplash.com/photo-1587474260584-136574528ed5?q=80&w=1000&auto=format&fit=crop" 
-                    alt="India Gate" 
+                  <img
+                    src={smartCityHubImg}
+                    alt="Smart City Hub"
                     className="rounded-xl w-full h-80 object-cover group-hover:scale-[1.02] transition-transform duration-500"
                   />
                   <div className="absolute bottom-6 left-6 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm px-4 py-2 rounded-lg shadow-lg">
-                    <p className="font-bold text-slate-800 dark:text-white">India Gate</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Symbol of Sacrifice</p>
+                    <p className="font-bold text-slate-800 dark:text-white">Smart City Hub</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Innovation Center</p>
                   </div>
                 </div>
               </FadeInSection>
@@ -476,100 +477,100 @@ const Home = () => {
         <div className="grid md:grid-cols-3 gap-10">
           <FadeInSection delay={0}>
             <FlipCard
-                height="h-80"
-                frontContent={
-                    <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all border-2 border-slate-100 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-400 h-full flex flex-col group relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-transparent dark:from-blue-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        <div className="bg-blue-100 dark:bg-blue-900/30 w-16 h-16 rounded-2xl flex items-center justify-center text-blue-600 dark:text-blue-400 mb-6 group-hover:scale-110 transition-transform duration-300 shadow-sm relative z-10">
-                            <CheckCircle size={32} />
-                        </div>
-                        <h3 className="text-2xl font-extrabold mb-3 text-slate-900 dark:text-white relative z-10 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Clean Delhi</h3>
-                        <p className="text-slate-600 dark:text-slate-300 leading-relaxed flex-grow font-medium relative z-10">
-                            Report garbage dumps, smog towers issues, or park maintenance to keep our capital breathing.
-                        </p>
-                    </div>
-                }
-                backContent={
-                    <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl border-2 border-blue-500 dark:border-blue-400 h-full flex flex-col justify-center items-center text-center relative overflow-hidden">
-                        <div className="absolute inset-0 bg-blue-50/30 dark:bg-blue-900/10"></div>
-                        <h3 className="text-xl font-bold mb-4 text-slate-900 dark:text-white relative z-10">Take Action</h3>
-                        <p className="text-slate-600 dark:text-slate-300 mb-8 font-medium relative z-10">
-                            Upload photos of garbage or pollution. Our AI will categorize and route it to the right department.
-                        </p>
-                        <Link to="/login" className="relative z-10 bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all transform hover:scale-105 shadow-lg hover:shadow-blue-500/25 flex items-center">
-                            Report Now <ArrowRight size={18} className="ml-2" />
-                        </Link>
-                    </div>
-                }
+              height="h-80"
+              frontContent={
+                <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all border-2 border-slate-100 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-400 h-full flex flex-col group relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-transparent dark:from-blue-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="bg-blue-100 dark:bg-blue-900/30 w-16 h-16 rounded-2xl flex items-center justify-center text-blue-600 dark:text-blue-400 mb-6 group-hover:scale-110 transition-transform duration-300 shadow-sm relative z-10">
+                    <CheckCircle size={32} />
+                  </div>
+                  <h3 className="text-2xl font-extrabold mb-3 text-slate-900 dark:text-white relative z-10 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Clean City</h3>
+                  <p className="text-slate-600 dark:text-slate-300 leading-relaxed flex-grow font-medium relative z-10">
+                    Report garbage dumps, smog towers issues, or park maintenance to keep our capital breathing.
+                  </p>
+                </div>
+              }
+              backContent={
+                <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl border-2 border-blue-500 dark:border-blue-400 h-full flex flex-col justify-center items-center text-center relative overflow-hidden">
+                  <div className="absolute inset-0 bg-blue-50/30 dark:bg-blue-900/10"></div>
+                  <h3 className="text-xl font-bold mb-4 text-slate-900 dark:text-white relative z-10">Take Action</h3>
+                  <p className="text-slate-600 dark:text-slate-300 mb-8 font-medium relative z-10">
+                    Upload photos of garbage or pollution. Our AI will categorize and route it to the right department.
+                  </p>
+                  <Link to="/login" className="relative z-10 bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all transform hover:scale-105 shadow-lg hover:shadow-blue-500/25 flex items-center">
+                    Report Now <ArrowRight size={18} className="ml-2" />
+                  </Link>
+                </div>
+              }
             />
           </FadeInSection>
           <FadeInSection delay={150}>
             <FlipCard
-                height="h-80"
-                frontContent={
-                    <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all border-2 border-slate-100 dark:border-slate-700 hover:border-green-500 dark:hover:border-green-400 h-full flex flex-col group relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-green-50/50 to-transparent dark:from-green-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        <div className="bg-green-100 dark:bg-green-900/30 w-16 h-16 rounded-2xl flex items-center justify-center text-green-600 dark:text-green-400 mb-6 group-hover:scale-110 transition-transform duration-300 shadow-sm relative z-10">
-                            <Activity size={32} />
-                        </div>
-                        <h3 className="text-2xl font-extrabold mb-3 text-slate-900 dark:text-white relative z-10 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">Civic Progress</h3>
-                        <p className="text-slate-600 dark:text-slate-300 leading-relaxed flex-grow font-medium relative z-10">
-                            From pothole repairs in Connaught Place to streetlights in Dwarka, track resolution in real-time.
-                        </p>
-                    </div>
-                }
-                backContent={
-                    <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl border-2 border-green-500 dark:border-green-400 h-full flex flex-col justify-center items-center text-center relative overflow-hidden">
-                        <div className="absolute inset-0 bg-green-50/30 dark:bg-green-900/10"></div>
-                        <h3 className="text-xl font-bold mb-4 text-slate-900 dark:text-white relative z-10">Live Dashboard</h3>
-                        <p className="text-slate-600 dark:text-slate-300 mb-8 font-medium relative z-10">
-                            View real-time status of all reported issues in your ward. Transparency is key.
-                        </p>
-                        <Link to="/login" className="relative z-10 bg-green-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-green-700 transition-all transform hover:scale-105 shadow-lg hover:shadow-green-500/25 flex items-center">
-                            View Dashboard <ArrowRight size={18} className="ml-2" />
-                        </Link>
-                    </div>
-                }
+              height="h-80"
+              frontContent={
+                <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all border-2 border-slate-100 dark:border-slate-700 hover:border-green-500 dark:hover:border-green-400 h-full flex flex-col group relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-green-50/50 to-transparent dark:from-green-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="bg-green-100 dark:bg-green-900/30 w-16 h-16 rounded-2xl flex items-center justify-center text-green-600 dark:text-green-400 mb-6 group-hover:scale-110 transition-transform duration-300 shadow-sm relative z-10">
+                    <Activity size={32} />
+                  </div>
+                  <h3 className="text-2xl font-extrabold mb-3 text-slate-900 dark:text-white relative z-10 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">Civic Progress</h3>
+                  <p className="text-slate-600 dark:text-slate-300 leading-relaxed flex-grow font-medium relative z-10">
+                    From pothole repairs in Connaught Place to streetlights in Dwarka, track resolution in real-time.
+                  </p>
+                </div>
+              }
+              backContent={
+                <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl border-2 border-green-500 dark:border-green-400 h-full flex flex-col justify-center items-center text-center relative overflow-hidden">
+                  <div className="absolute inset-0 bg-green-50/30 dark:bg-green-900/10"></div>
+                  <h3 className="text-xl font-bold mb-4 text-slate-900 dark:text-white relative z-10">Live Dashboard</h3>
+                  <p className="text-slate-600 dark:text-slate-300 mb-8 font-medium relative z-10">
+                    View real-time status of all reported issues in your ward. Transparency is key.
+                  </p>
+                  <Link to="/login" className="relative z-10 bg-green-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-green-700 transition-all transform hover:scale-105 shadow-lg hover:shadow-green-500/25 flex items-center">
+                    View Dashboard <ArrowRight size={18} className="ml-2" />
+                  </Link>
+                </div>
+              }
             />
           </FadeInSection>
           <FadeInSection delay={300}>
             <FlipCard
-                height="h-80"
-                frontContent={
-                    <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all border-2 border-slate-100 dark:border-slate-700 hover:border-purple-500 dark:hover:border-purple-400 h-full flex flex-col group relative overflow-hidden">
-                        <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 to-transparent dark:from-purple-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        <div className="bg-purple-100 dark:bg-purple-900/30 w-16 h-16 rounded-2xl flex items-center justify-center text-purple-600 dark:text-purple-400 mb-6 group-hover:scale-110 transition-transform duration-300 shadow-sm relative z-10">
-                            <Users size={32} />
-                        </div>
-                        <h3 className="text-2xl font-extrabold mb-3 text-slate-900 dark:text-white relative z-10 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">Participation</h3>
-                        <p className="text-slate-600 dark:text-slate-300 leading-relaxed flex-grow font-medium relative z-10">
-                            Join fellow Delhiites in making our historic city a modern, smart, and livable metropolis.
-                        </p>
-                    </div>
-                }
-                backContent={
-                    <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl border-2 border-purple-500 dark:border-purple-400 h-full flex flex-col justify-center items-center text-center relative overflow-hidden">
-                        <div className="absolute inset-0 bg-purple-50/30 dark:bg-purple-900/10"></div>
-                        <h3 className="text-xl font-bold mb-4 text-slate-900 dark:text-white relative z-10">Join Community</h3>
-                        <p className="text-slate-600 dark:text-slate-300 mb-8 font-medium relative z-10">
-                            Participate in polls, suggest improvements, and volunteer for local drives.
-                        </p>
-                        <Link to="/login" className="relative z-10 bg-purple-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-purple-700 transition-all transform hover:scale-105 shadow-lg hover:shadow-purple-500/25 flex items-center">
-                            Join Now <ArrowRight size={18} className="ml-2" />
-                        </Link>
-                    </div>
-                }
+              height="h-80"
+              frontContent={
+                <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-all border-2 border-slate-100 dark:border-slate-700 hover:border-purple-500 dark:hover:border-purple-400 h-full flex flex-col group relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 to-transparent dark:from-purple-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="bg-purple-100 dark:bg-purple-900/30 w-16 h-16 rounded-2xl flex items-center justify-center text-purple-600 dark:text-purple-400 mb-6 group-hover:scale-110 transition-transform duration-300 shadow-sm relative z-10">
+                    <Users size={32} />
+                  </div>
+                  <h3 className="text-2xl font-extrabold mb-3 text-slate-900 dark:text-white relative z-10 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">Participation</h3>
+                  <p className="text-slate-600 dark:text-slate-300 leading-relaxed flex-grow font-medium relative z-10">
+                    Join fellow citizens in making our historic city a modern, smart, and livable metropolis.
+                  </p>
+                </div>
+              }
+              backContent={
+                <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl border-2 border-purple-500 dark:border-purple-400 h-full flex flex-col justify-center items-center text-center relative overflow-hidden">
+                  <div className="absolute inset-0 bg-purple-50/30 dark:bg-purple-900/10"></div>
+                  <h3 className="text-xl font-bold mb-4 text-slate-900 dark:text-white relative z-10">Join Community</h3>
+                  <p className="text-slate-600 dark:text-slate-300 mb-8 font-medium relative z-10">
+                    Participate in polls, suggest improvements, and volunteer for local drives.
+                  </p>
+                  <Link to="/login" className="relative z-10 bg-purple-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-purple-700 transition-all transform hover:scale-105 shadow-lg hover:shadow-purple-500/25 flex items-center">
+                    Join Now <ArrowRight size={18} className="ml-2" />
+                  </Link>
+                </div>
+              }
             />
           </FadeInSection>
         </div>
-      </section>
+      </section >
 
-      {/* Why Choose E-Delhi Section */}
-      <section className="py-20 bg-slate-50 dark:bg-slate-800 transition-colors duration-200">
+      {/* Why Choose E-City Section */}
+      < section className="py-20 bg-slate-50 dark:bg-slate-800 transition-colors duration-200" >
         <div className="container mx-auto px-4">
           <FadeInSection>
             <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">Why E-Delhi 2.0?</h2>
+              <h2 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">Why E-City 2.0?</h2>
               <p className="text-slate-600 dark:text-slate-300 max-w-2xl mx-auto">Built for the people, by the people. Here's what makes us different.</p>
             </div>
           </FadeInSection>
@@ -603,15 +604,15 @@ const Home = () => {
             </FadeInSection>
           </div>
         </div>
-      </section>
+      </section >
 
       {/* Footer */}
-      <footer className="bg-slate-900 text-white py-12">
+      < footer className="bg-slate-900 text-white py-12" >
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
-              <h3 className="text-2xl font-bold mb-4">E-DELHI 2.0</h3>
-              <p className="text-slate-400 mb-4">Empowering citizens to build a better Delhi together.</p>
+              <h3 className="text-2xl font-bold mb-4">E-CITY 2.0</h3>
+              <p className="text-slate-400 mb-4">Empowering citizens to build a better city together.</p>
               <div className="flex space-x-4">
                 <a href="#" className="bg-slate-800 p-2 rounded-full hover:bg-blue-600 transition-colors" aria-label="Twitter">
                   <Twitter size={20} />
@@ -632,17 +633,17 @@ const Home = () => {
               <ul className="space-y-2 text-slate-400">
                 <li><Link to="/login" className="hover:text-white transition-colors">Login</Link></li>
                 <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
-                <li><Link to="/city-map" className="hover:text-white transition-colors">City Map</Link></li>
+                <li><Link to="/map" className="hover:text-white transition-colors">City Map</Link></li>
                 <li><Link to="/help" className="hover:text-white transition-colors">Help Center</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-bold mb-4">Resources</h4>
               <ul className="space-y-2 text-slate-400">
-                <li><a href="#" className="hover:text-white transition-colors">Documentation</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">API Access</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
+                <li><Link to="/documentation" className="hover:text-white transition-colors">Documentation</Link></li>
+                <li><Link to="/api-access" className="hover:text-white transition-colors">API Access</Link></li>
+                <li><Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/terms-of-service" className="hover:text-white transition-colors">Terms of Service</Link></li>
               </ul>
             </div>
             <div>
@@ -650,7 +651,7 @@ const Home = () => {
               <ul className="space-y-3 text-slate-400">
                 <li className="flex items-center">
                   <MapPin size={18} className="mr-2 flex-shrink-0" />
-                  <span>Delhi Secretariat, ITO, New Delhi</span>
+                  <span>City Hall, Central District</span>
                 </li>
                 <li className="flex items-center">
                   <Phone size={18} className="mr-2 flex-shrink-0" />
@@ -658,17 +659,17 @@ const Home = () => {
                 </li>
                 <li className="flex items-center">
                   <Mail size={18} className="mr-2 flex-shrink-0" />
-                  <span>support@edelhi.gov.in</span>
+                  <span>support@ecity.gov.in</span>
                 </li>
               </ul>
             </div>
           </div>
           <div className="border-t border-slate-800 pt-8 text-center text-slate-400">
-            <p>&copy; 2025 E-Delhi 2.0. All rights reserved. Built with ❤️ for Delhi.</p>
+            <p>&copy; 2025 E-City 2.0. All rights reserved. Built with ❤️ for our city.</p>
           </div>
         </div>
-      </footer>
-    </div>
+      </footer >
+    </div >
   );
 };
 

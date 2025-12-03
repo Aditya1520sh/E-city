@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axiosInstance from '../utils/axios';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Activity, Users, Calendar, Megaphone, 
+import {
+  Activity, Users, Calendar, Megaphone,
   PlusCircle, ArrowRight, Clock, MapPin, Building2, TrendingUp, BarChart3, PieChart
 } from 'lucide-react';
 import AdminLayout from '../layouts/AdminLayout';
@@ -109,7 +109,7 @@ const AdminDashboard = () => {
       'roads': 'Roads & Highways',
       'other': 'General Services'
     };
-    
+
     const deptMap = {};
     data.issues.forEach(issue => {
       const dept = issue.assignedDepartment || categoryToDepartment[issue.category] || issue.category;
@@ -166,6 +166,18 @@ const AdminDashboard = () => {
     return Math.floor(seconds) + " seconds ago";
   };
 
+  // Navigation helpers for Flight Deck actions
+  const goToDepartment = (deptName, action = 'view') => {
+    const encoded = encodeURIComponent(deptName || '');
+    if (action === 'assign') {
+      navigate(`/admin/departments?dept=${encoded}&action=assign`);
+    } else if (action === 'escalate') {
+      navigate(`/admin/departments?dept=${encoded}&action=escalate`);
+    } else {
+      navigate(`/admin/departments?dept=${encoded}`);
+    }
+  };
+
   if (loading) return (
     <AdminLayout>
       <div className="flex items-center justify-center h-screen">
@@ -176,100 +188,35 @@ const AdminDashboard = () => {
 
   return (
     <AdminLayout>
-      <div className="mb-6">
-        <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">Comprehensive city management overview.</p>
-      </div>
-
-      {/* Enhanced Stats Grid with Gradients */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="group relative overflow-hidden">
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl blur opacity-30 group-hover:opacity-75 transition duration-500"></div>
-          <div className="relative bg-white dark:bg-slate-800 p-7 rounded-2xl border border-blue-200 dark:border-blue-500/30 shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300">
-            <div className="flex items-center justify-between mb-5">
-              <div className="p-4 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 shadow-lg">
-                <Activity size={28} className="text-white" />
-              </div>
-              <div className="text-right">
-                <p className="text-4xl font-black bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">{data.issues.length}</p>
-              </div>
+      {/* City Pulse Header */}
+      <div className="mb-4 sm:mb-6">
+        <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-gray-200 dark:border-slate-700 bg-gradient-to-b from-white to-gray-50 dark:from-slate-900 dark:to-slate-800">
+          <div className="absolute inset-0 opacity-[0.06] pointer-events-none" aria-hidden="true"></div>
+          <div className="px-4 sm:px-6 py-4 sm:py-5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+                City Mission Control
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
+                A human-centered overview of ongoing civic work.
+              </p>
             </div>
-            <div className="space-y-1">
-              <p className="text-xs font-bold tracking-widest uppercase text-blue-600 dark:text-blue-400">Total Issues</p>
-              <p className="text-gray-700 dark:text-gray-300 font-semibold text-sm">Community Reports</p>
-            </div>
-            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700">
-              <div className="h-2 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full animate-pulse" style={{width: '75%'}}></div>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-gray-200">
+                <Activity size={16} className="text-emerald-600" />
+                <span className="text-xs font-semibold">Urgent: {data.issues.filter(i => i.priority === 'high' || i.status === 'pending').length}</span>
               </div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="group relative overflow-hidden">
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl blur opacity-30 group-hover:opacity-75 transition duration-500"></div>
-          <div className="relative bg-white dark:bg-slate-800 p-7 rounded-2xl border border-green-200 dark:border-green-500/30 shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300">
-            <div className="flex items-center justify-between mb-5">
-              <div className="p-4 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 shadow-lg">
-                <Users size={28} className="text-white" />
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-gray-200">
+                <Calendar size={16} className="text-indigo-600" />
+                <span className="text-xs font-semibold">Events: {data.events.length}</span>
               </div>
-              <div className="text-right">
-                <p className="text-4xl font-black bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">{data.users.length}</p>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-gray-200">
+                <Megaphone size={16} className="text-amber-600" />
+                <span className="text-xs font-semibold">Notices: {data.announcements.length}</span>
               </div>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-bold tracking-widest uppercase text-green-600 dark:text-green-400">Active Users</p>
-              <p className="text-gray-700 dark:text-gray-300 font-semibold text-sm">Registered Citizens</p>
-            </div>
-            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700">
-              <div className="h-2 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full animate-pulse" style={{width: '90%'}}></div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="group relative overflow-hidden">
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl blur opacity-30 group-hover:opacity-75 transition duration-500"></div>
-          <div className="relative bg-white dark:bg-slate-800 p-7 rounded-2xl border border-indigo-200 dark:border-indigo-500/30 shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300">
-            <div className="flex items-center justify-between mb-5">
-              <div className="p-4 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 shadow-lg">
-                <Calendar size={28} className="text-white" />
-              </div>
-              <div className="text-right">
-                <p className="text-4xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">{data.events.length}</p>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-bold tracking-widest uppercase text-indigo-600 dark:text-indigo-400">Events</p>
-              <p className="text-gray-700 dark:text-gray-300 font-semibold text-sm">Scheduled Activities</p>
-            </div>
-            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700">
-              <div className="h-2 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full animate-pulse" style={{width: '60%'}}></div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="group relative overflow-hidden">
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-600 to-rose-600 rounded-2xl blur opacity-30 group-hover:opacity-75 transition duration-500"></div>
-          <div className="relative bg-white dark:bg-slate-800 p-7 rounded-2xl border border-orange-200 dark:border-orange-500/30 shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300">
-            <div className="flex items-center justify-between mb-5">
-              <div className="p-4 rounded-xl bg-gradient-to-br from-orange-500 to-rose-500 shadow-lg">
-                <Megaphone size={28} className="text-white" />
-              </div>
-              <div className="text-right">
-                <p className="text-4xl font-black bg-gradient-to-r from-orange-600 to-rose-600 bg-clip-text text-transparent">{data.announcements.length}</p>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs font-bold tracking-widest uppercase text-orange-600 dark:text-orange-400">Announcements</p>
-              <p className="text-gray-700 dark:text-gray-300 font-semibold text-sm">Public Notices</p>
-            </div>
-            <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-700">
-              <div className="h-2 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-orange-500 to-rose-500 rounded-full animate-pulse" style={{width: '85%'}}></div>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-slate-700 text-gray-800 dark:text-gray-200">
+                <Users size={16} className="text-blue-600" />
+                <span className="text-xs font-semibold">Citizens: {data.users.length}</span>
               </div>
             </div>
           </div>
@@ -287,42 +234,42 @@ const AdminDashboard = () => {
           </h2>
         </div>
 
-        {/* Analytics Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Analytics Charts Grid (civic theming) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           {/* Issue Trends Chart */}
           <div className="group relative overflow-hidden">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
-            <div className="relative bg-white dark:bg-slate-800 p-6 rounded-2xl border border-blue-200 dark:border-blue-500/30 shadow-lg">
+            <div className="relative bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center mb-4">
                 <BarChart3 className="text-blue-600 dark:text-blue-400 mr-2" size={20} />
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">Issue Trends (Last 7 Days)</h3>
               </div>
               <ResponsiveContainer width="100%" height={280}>
                 <LineChart data={analyticsData.trendData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
-                  <XAxis 
-                    dataKey="date" 
-                    stroke="#9CA3AF" 
+                  <CartesianGrid strokeDasharray="2 2" stroke="#e5e7eb" opacity={0.8} />
+                  <XAxis
+                    dataKey="date"
+                    stroke="#6B7280"
                     style={{ fontSize: '12px' }}
                   />
-                  <YAxis 
-                    stroke="#9CA3AF" 
+                  <YAxis
+                    stroke="#6B7280"
                     style={{ fontSize: '12px' }}
                   />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1e293b', 
-                      border: '1px solid #3b82f6',
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#111827',
+                      border: '1px solid #2563eb',
                       borderRadius: '8px',
                       color: '#fff'
                     }}
                   />
-                  <Line 
-                    type="monotone" 
-                    dataKey="count" 
-                    stroke="#3b82f6" 
-                    strokeWidth={3}
-                    dot={{ fill: '#3b82f6', strokeWidth: 2, r: 5 }}
+                  {/* Use a distinct color for trends */}
+                  <Line
+                    type="monotone"
+                    dataKey="count"
+                    stroke="#0ea5e9" /* sky-500 */
+                    strokeWidth={2.5}
+                    dot={{ fill: '#0ea5e9', strokeWidth: 2, r: 4 }}
                     activeDot={{ r: 7 }}
                   />
                 </LineChart>
@@ -330,126 +277,112 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Category Breakdown Pie Chart */}
+          {/* Category Heatbands (replaces pie with civic heatbars) */}
           <div className="group relative overflow-hidden">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
-            <div className="relative bg-white dark:bg-slate-800 p-6 rounded-2xl border border-purple-200 dark:border-purple-500/30 shadow-lg">
+            <div className="relative bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center mb-4">
                 <PieChart className="text-purple-600 dark:text-purple-400 mr-2" size={20} />
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Category Breakdown</h3>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Category Heatbands</h3>
               </div>
-              <ResponsiveContainer width="100%" height={280}>
-                <RePieChart>
-                  <Pie
-                    data={analyticsData.categoryData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={90}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {analyticsData.categoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4'][index % 6]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1e293b', 
-                      border: '1px solid #8b5cf6',
-                      borderRadius: '8px',
-                      color: '#fff'
-                    }}
-                  />
-                </RePieChart>
-              </ResponsiveContainer>
+              <div className="space-y-3">
+                {analyticsData.categoryData.map((cat, idx) => {
+                  // Expanded 16-color palette for unique category colors
+                  const categoryColors = [
+                    '#2563eb', // blue-600
+                    '#7c3aed', // violet-600
+                    '#ea580c', // orange-600
+                    '#16a34a', // green-600
+                    '#0ea5e9', // sky-500
+                    '#dc2626', // red-600
+                    '#f59e0b', // amber-500
+                    '#14b8a6', // teal-500
+                    '#8b5cf6', // purple-500
+                    '#ec4899', // pink-500
+                    '#06b6d4', // cyan-500
+                    '#84cc16', // lime-500
+                    '#f97316', // orange-500
+                    '#6366f1', // indigo-500
+                    '#10b981', // emerald-500
+                    '#f43f5e'  // rose-500
+                  ];
+                  return (
+                    <div key={idx} className="flex items-center gap-3">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 w-32 truncate">{cat.name}</span>
+                      <div className="flex-1 h-3 bg-gray-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full"
+                          style={{ 
+                            width: `${Math.max(6, (cat.value / Math.max(1, analyticsData.categoryData.reduce((m, c) => Math.max(m, c.value), 1))) * 100)}%`, 
+                            backgroundColor: categoryColors[idx % categoryColors.length] 
+                          }}
+                        />
+                      </div>
+                      <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 w-10 text-right">{cat.value}</span>
+                    </div>
+                  );
+                })}
+                {analyticsData.categoryData.length === 0 && (
+                  <div className="text-sm text-gray-500 dark:text-gray-400">No category data</div>
+                )}
+              </div>
             </div>
           </div>
 
           {/* Status Distribution */}
           <div className="group relative overflow-hidden">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
-            <div className="relative bg-white dark:bg-slate-800 p-6 rounded-2xl border border-green-200 dark:border-green-500/30 shadow-lg">
+            <div className="relative bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center mb-4">
                 <Activity className="text-green-600 dark:text-green-400 mr-2" size={20} />
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white">Status Distribution</h3>
               </div>
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={analyticsData.statusData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
-                  <XAxis 
-                    dataKey="name" 
-                    stroke="#9CA3AF" 
+                  <CartesianGrid strokeDasharray="2 2" stroke="#e5e7eb" opacity={0.8} />
+                  <XAxis
+                    dataKey="name"
+                    stroke="#6B7280"
                     style={{ fontSize: '12px' }}
                   />
-                  <YAxis 
-                    stroke="#9CA3AF" 
+                  <YAxis
+                    stroke="#6B7280"
                     style={{ fontSize: '12px' }}
                   />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1e293b', 
-                      border: '1px solid #10b981',
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#111827',
+                      border: '1px solid #16a34a',
                       borderRadius: '8px',
                       color: '#fff'
                     }}
                   />
-                  <Bar dataKey="value" fill="#10b981" radius={[8, 8, 0, 0]} />
+                  {/* Per-status colors and labels */}
+                  <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                    {analyticsData.statusData.map((entry, idx) => {
+                      const colorMap = {
+                        Pending: '#f59e0b',
+                        'In-progress': '#2563eb',
+                        Resolved: '#16a34a',
+                        Rejected: '#b91c1c'
+                      };
+                      const fillColor = colorMap[entry.name] || ['#16a34a', '#2563eb', '#f59e0b', '#b91c1c'][idx % 4];
+                      return <Cell key={`status-cell-${idx}`} fill={fillColor} />;
+                    })}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          {/* Department Performance */}
-          <div className="group relative overflow-hidden">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-600 to-rose-600 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
-            <div className="relative bg-white dark:bg-slate-800 p-6 rounded-2xl border border-orange-200 dark:border-orange-500/30 shadow-lg">
-              <div className="flex items-center mb-4">
-                <Building2 className="text-orange-600 dark:text-orange-400 mr-2" size={20} />
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Department Workload</h3>
-              </div>
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={analyticsData.departmentData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
-                  <XAxis 
-                    dataKey="name" 
-                    stroke="#9CA3AF" 
-                    style={{ fontSize: '10px' }}
-                    angle={-25}
-                    textAnchor="end"
-                    height={70}
-                  />
-                  <YAxis 
-                    stroke="#9CA3AF" 
-                    style={{ fontSize: '12px' }}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#1e293b', 
-                      border: '1px solid #f97316',
-                      borderRadius: '8px',
-                      color: '#fff'
-                    }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: '12px' }} />
-                  <Bar dataKey="resolved" fill="#10b981" radius={[8, 8, 0, 0]} name="Resolved" />
-                  <Bar dataKey="inProgress" fill="#3b82f6" radius={[8, 8, 0, 0]} name="In Progress" />
-                  <Bar dataKey="pending" fill="#f59e0b" radius={[8, 8, 0, 0]} name="Pending" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
         </div>
 
         {/* Key Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-gradient-to-br from-blue-500 to-cyan-600 p-6 rounded-xl shadow-lg text-white">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          <div className="bg-gradient-to-br from-blue-500 to-cyan-600 p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 text-white">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-blue-100 text-sm font-medium uppercase tracking-wide">Resolution Rate</p>
                 <p className="text-4xl font-black mt-2">
-                  {data.issues.length > 0 
+                  {data.issues.length > 0
                     ? Math.round((data.issues.filter(i => i.status === 'resolved').length / data.issues.length) * 100)
                     : 0}%
                 </p>
@@ -460,20 +393,20 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-6 rounded-xl shadow-lg text-white">
+          <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 text-white">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-purple-100 text-sm font-medium uppercase tracking-wide">Avg Response Time</p>
                 <p className="text-4xl font-black mt-2">
                   {data.issues.length > 0
                     ? Math.round(data.issues.reduce((acc, issue) => {
-                        if (issue.status === 'resolved' && issue.resolutionTime) {
-                          const created = new Date(issue.createdAt);
-                          const resolved = new Date(issue.resolutionTime);
-                          return acc + (resolved - created) / (1000 * 60 * 60 * 24);
-                        }
-                        return acc;
-                      }, 0) / data.issues.filter(i => i.status === 'resolved').length || 0)
+                      if (issue.status === 'resolved' && issue.resolutionTime) {
+                        const created = new Date(issue.createdAt);
+                        const resolved = new Date(issue.resolutionTime);
+                        return acc + (resolved - created) / (1000 * 60 * 60 * 24);
+                      }
+                      return acc;
+                    }, 0) / data.issues.filter(i => i.status === 'resolved').length || 0)
                     : 0}d
                 </p>
               </div>
@@ -483,7 +416,7 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-6 rounded-xl shadow-lg text-white">
+          <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-6 rounded-xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 text-white">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-green-100 text-sm font-medium uppercase tracking-wide">Active Issues</p>
@@ -499,25 +432,25 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Recent Activity Feed */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-md flex flex-col">
-          <div className="p-6 border-b border-gray-200 dark:border-slate-700 flex justify-between items-center">
+        <div className="lg:col-span-3 bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-lg flex flex-col overflow-hidden">
+          <div className="p-6 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 flex justify-between items-center">
             <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center">
-              <Activity className="mr-3 text-blue-600 dark:text-blue-400" size={20} />
-              Recent Activity
+              <Activity className="mr-3 text-blue-600 dark:text-blue-400" size={24} />
+              Activity Feed
             </h2>
+            <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Live Updates</span>
           </div>
-          <div className="p-6 flex-1 overflow-y-auto max-h-[500px]">
+          <div className="p-6 flex-1 overflow-y-auto max-h-[600px]">
             <div className="space-y-6">
               {getRecentActivity().map((activity, index) => (
                 <div key={index} className="flex items-start space-x-4 hover:bg-gray-50 dark:hover:bg-slate-700/50 p-3 rounded-lg transition-all">
-                  <div className={`p-2 rounded-lg shrink-0 ${
-                    activity.type === 'issue' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' :
-                    activity.type === 'event' ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400' :
-                    activity.type === 'user' ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400' :
-                    'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                  }`}>
+                  <div className={`p-2 rounded-lg shrink-0 ${activity.type === 'issue' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' :
+                      activity.type === 'event' ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400' :
+                        activity.type === 'user' ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400' :
+                          'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                    }`}>
                     {activity.type === 'issue' && <Activity size={18} />}
                     {activity.type === 'event' && <Calendar size={18} />}
                     {activity.type === 'user' && <Users size={18} />}
@@ -546,83 +479,54 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Quick Actions & Summary */}
-        <div className="space-y-6">
-          {/* Quick Actions */}
-          <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-md p-6">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
+        {/* Quick Actions */}
+        <div className="lg:col-span-2 space-y-6">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-lg p-6">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-5 flex items-center">
+              <PlusCircle className="mr-2 text-blue-600 dark:text-blue-400" size={20} />
+              Quick Actions
+            </h2>
             <div className="space-y-3">
-              <button 
+              <button
                 onClick={() => navigate('/admin/announcements')}
-                className="w-full flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-slate-700/50 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all group"
+                className="w-full flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-all group"
               >
                 <div className="flex items-center">
-                  <Megaphone size={18} className="mr-3 text-gray-400 group-hover:text-blue-500" />
+                  <Megaphone size={18} className="mr-3 text-gray-500 group-hover:text-amber-600" />
                   <span className="font-medium">Post Announcement</span>
                 </div>
-                <PlusCircle size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                <PlusCircle size={16} className="opacity-60 group-hover:opacity-100 transition-opacity" />
               </button>
-              <button 
+              <button
                 onClick={() => navigate('/admin/events')}
-                className="w-full flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-slate-700/50 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all group"
+                className="w-full flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-all group"
               >
                 <div className="flex items-center">
-                  <Calendar size={18} className="mr-3 text-gray-400 group-hover:text-indigo-500" />
+                  <Calendar size={18} className="mr-3 text-gray-500 group-hover:text-indigo-600" />
                   <span className="font-medium">Create Event</span>
                 </div>
-                <PlusCircle size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                <PlusCircle size={16} className="opacity-60 group-hover:opacity-100 transition-opacity" />
               </button>
-              <button 
+              <button
                 onClick={() => navigate('/admin/users')}
-                className="w-full flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-slate-700/50 hover:bg-green-50 dark:hover:bg-green-900/20 text-gray-700 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 transition-all group"
+                className="w-full flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-all group"
               >
                 <div className="flex items-center">
-                  <Users size={18} className="mr-3 text-gray-400 group-hover:text-green-500" />
+                  <Users size={18} className="mr-3 text-gray-500 group-hover:text-green-600" />
                   <span className="font-medium">Manage Users</span>
                 </div>
-                <ArrowRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                <ArrowRight size={16} className="opacity-60 group-hover:opacity-100 transition-opacity" />
               </button>
-              <button 
+              <button
                 onClick={() => navigate('/admin/departments')}
-                className="w-full flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-slate-700/50 hover:bg-orange-50 dark:hover:bg-orange-900/20 text-gray-700 dark:text-gray-300 hover:text-orange-600 dark:hover:text-orange-400 transition-all group"
+                className="w-full flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-slate-700/50 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 transition-all group"
               >
                 <div className="flex items-center">
-                  <Building2 size={18} className="mr-3 text-gray-400 group-hover:text-orange-500" />
+                  <Building2 size={18} className="mr-3 text-gray-500 group-hover:text-orange-600" />
                   <span className="font-medium">Manage Departments</span>
                 </div>
-                <ArrowRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                <ArrowRight size={16} className="opacity-60 group-hover:opacity-100 transition-opacity" />
               </button>
-            </div>
-          </div>
-
-          {/* System Status */}
-          <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 shadow-md p-6">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">System Status</h2>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400 text-sm">Server Status</span>
-                <span className="flex items-center text-green-600 dark:text-green-400 text-sm font-bold">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-                  Online
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400 text-sm">Database</span>
-                <span className="text-green-600 dark:text-green-400 text-sm font-bold">Connected</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600 dark:text-gray-400 text-sm">Last Backup</span>
-                <span className="text-gray-900 dark:text-white text-sm">2 hours ago</span>
-              </div>
-              <div className="pt-4 border-t border-gray-200 dark:border-slate-700">
-                <div className="flex justify-between items-end mb-1">
-                  <span className="text-xs text-gray-600 dark:text-gray-400">Storage Usage</span>
-                  <span className="text-xs font-bold text-gray-900 dark:text-white">45%</span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
-                  <div className="bg-blue-500 h-2 rounded-full" style={{ width: '45%' }}></div>
-                </div>
-              </div>
             </div>
           </div>
         </div>

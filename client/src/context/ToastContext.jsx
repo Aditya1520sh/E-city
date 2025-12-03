@@ -21,17 +21,16 @@ export const ToastProvider = ({ children }) => {
   }, []);
 
   return (
-    <ToastContext.Provider value={{ addToast }}>
+    <ToastContext.Provider value={{ showToast: addToast, addToast }}>
       {children}
       <div className="fixed bottom-4 right-4 z-50 space-y-2">
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`flex items-center p-4 rounded-lg shadow-lg text-white min-w-[300px] transform transition-all duration-300 ease-in-out ${
-              toast.type === 'success' ? 'bg-green-600' :
-              toast.type === 'error' ? 'bg-red-600' :
-              'bg-blue-600'
-            }`}
+            className={`flex items-center p-4 rounded-lg shadow-lg text-white min-w-[300px] transform transition-all duration-300 ease-in-out ${toast.type === 'success' ? 'bg-green-600' :
+                toast.type === 'error' ? 'bg-red-600' :
+                  'bg-blue-600'
+              }`}
           >
             <div className="mr-3">
               {toast.type === 'success' && <CheckCircle size={20} />}

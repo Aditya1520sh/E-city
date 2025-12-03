@@ -1,196 +1,401 @@
 import React, { useState, useEffect } from 'react';
 import UserLayout from '../layouts/UserLayout';
-import MapComponent from '../components/MapComponent';
-import { useToast } from '../context/ToastContext';
-import { MapPin, ArrowLeft, Info, Phone, Image as ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, Navigation, Search, ZoomIn, ZoomOut, AlertCircle } from 'lucide-react';
+import axios from '../utils/axios';
 
 const CityMap = () => {
-  const [locations, setLocations] = useState([]);
-  const [filteredLocations, setFilteredLocations] = useState([]);
-  const [selectedLocation, setSelectedLocation] = useState(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [selectedTypes, setSelectedTypes] = useState({
-    hospital: true,
-    school: true,
-    community_center: true,
-    mcd_office: true,
-    landmark: true
-  });
-  const { showToast } = useToast();
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedLocation, setSelectedLocation] = useState(null);
+    const [blinkingLocation, setBlinkingLocation] = useState(null);
+    const [locations, setLocations] = useState([]);
+    const [issues, setIssues] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-  useEffect(() => {
-    fetchLocations();
-  }, []);
-
-  useEffect(() => {
-    filterLocations();
-  }, [locations, selectedTypes]);
-
-  const fetchLocations = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(API_BASE + '/locations', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await response.json();
-      setLocations(data);
-    } catch (error) {
-      showToast('Error fetching locations', 'error');
-    }
-  };
-
-  const filterLocations = () => {
-    const filtered = locations.filter(loc => selectedTypes[loc.type]);
-    setFilteredLocations(filtered);
-  };
-
-  const handleTypeToggle = (type) => {
-    setSelectedTypes(prev => ({
-      ...prev,
-      [type]: !prev[type]
-    }));
-  };
-
-  const handleMarkerClick = (location) => {
-    setSelectedLocation(location);
-    if (!isSidebarOpen) setIsSidebarOpen(true);
-  };
-
-  const handleBackToFilters = () => {
-    setSelectedLocation(null);
-  };
-
-  const locationTypes = [
-    { id: 'hospital', label: 'Hospitals', color: 'text-red-600' },
-    { id: 'school', label: 'Schools', color: 'text-yellow-600' },
-    { id: 'community_center', label: 'Community Centers', color: 'text-green-600' },
-    { id: 'mcd_office', label: 'MCD Offices', color: 'text-blue-600' },
-    { id: 'landmark', label: 'Landmarks', color: 'text-purple-600' }
-  ];
-
-  return (
-    <UserLayout>
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">City Map</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">Explore city landmarks, parks, and offices.</p>
-        </div>
-        <button
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="flex items-center space-x-2 px-4 py-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors text-sm font-medium text-gray-700 dark:text-gray-200"
-        >
-          {isSidebarOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
-          <span>{isSidebarOpen ? 'Hide Sidebar' : 'Show Sidebar'}</span>
-        </button>
-      </div>
-      
-      <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-200px)] min-h-[500px] relative">
-        {/* Sidebar / Filter Panel */}
-        <div className={`${isSidebarOpen ? 'w-full lg:w-80 opacity-100' : 'w-0 opacity-0 overflow-hidden p-0 border-0'} transition-all duration-300 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-y-auto`}>
-          {selectedLocation ? (
-            <div className="animate-fadeIn">
-              <button 
-                onClick={handleBackToFilters} 
-                className="mb-4 text-blue-600 dark:text-blue-400 text-sm flex items-center hover:underline"
-              >
-                 <ArrowLeft size={16} className="mr-1" /> Back to Filters
-              </button>
-              
-              {selectedLocation.imageUrl && (
-                <div className="mb-4 rounded-lg overflow-hidden h-48 bg-gray-100 dark:bg-slate-700">
-                  <img 
-                    src={selectedLocation.imageUrl} 
-                    alt={selectedLocation.name} 
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = 'https://via.placeholder.com/400x200?text=No+Image';
-                    }}
-                  />
-                </div>
-              )}
-
-              <div className="mb-4">
-                <h2 className="font-bold text-xl text-gray-900 dark:text-white mb-2">{selectedLocation.name}</h2>
-                <span className={`inline-block px-2 py-1 rounded text-xs font-semibold uppercase tracking-wide ${
-                  locationTypes.find(t => t.id === selectedLocation.type)?.color.replace('text-', 'bg-').replace('600', '100') + ' ' + 
-                  locationTypes.find(t => t.id === selectedLocation.type)?.color 
-                } bg-opacity-20`}>
-                  {locationTypes.find(t => t.id === selectedLocation.type)?.label || selectedLocation.type}
-                </span>
-              </div>
-              
-              <div className="space-y-4 text-sm text-gray-600 dark:text-gray-300">
-                {selectedLocation.address && (
-                  <div className="flex items-start gap-3">
-                    <MapPin size={18} className="mt-0.5 flex-shrink-0 text-gray-400" />
-                    <div>
-                      <p className="font-medium text-gray-700 dark:text-gray-200">Address</p>
-                      <p>{selectedLocation.address}</p>
-                    </div>
-                  </div>
-                )}
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [locationsRes, issuesRes] = await Promise.all([
+                    axios.get('/locations'),
+                    axios.get('/issues')
+                ]);
                 
-                {selectedLocation.contact && (
-                  <div className="flex items-start gap-3">
-                    <Phone size={18} className="mt-0.5 flex-shrink-0 text-gray-400" />
-                    <div>
-                      <p className="font-medium text-gray-700 dark:text-gray-200">Contact</p>
-                      <p>{selectedLocation.contact}</p>
-                    </div>
-                  </div>
-                )}
+                // Format locations to include lat/lng
+                const formattedLocations = locationsRes.data.map(loc => ({
+                    id: loc.id,
+                    name: loc.name,
+                    lat: loc.latitude,
+                    lng: loc.longitude,
+                    type: loc.type || 'general',
+                    address: loc.address
+                }));
+                
+                setLocations(formattedLocations);
+                setIssues(issuesRes.data);
+            } catch (error) {
+                console.error('Error fetching map data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        
+        fetchData();
+    }, []);
 
-                {selectedLocation.description && (
-                  <div className="flex items-start gap-3">
-                    <Info size={18} className="mt-0.5 flex-shrink-0 text-gray-400" />
-                    <div>
-                      <p className="font-medium text-gray-700 dark:text-gray-200">Description</p>
-                      <p>{selectedLocation.description}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <>
-              <h2 className="font-semibold text-lg mb-4 text-gray-800 dark:text-white">Filters</h2>
-              <div className="space-y-3">
-                {locationTypes.map((type) => (
-                  <label key={type.id} className="flex items-center space-x-3 cursor-pointer p-2 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg transition-colors">
-                    <input
-                      type="checkbox"
-                      checked={selectedTypes[type.id]}
-                      onChange={() => handleTypeToggle(type.id)}
-                      className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className={`font-medium ${type.color} dark:text-gray-200`}>{type.label}</span>
-                  </label>
-                ))}
-              </div>
-              
-              <div className="mt-6 pt-6 border-t border-gray-100 dark:border-slate-700">
-                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Stats</h3>
-                <div className="text-sm text-gray-600 dark:text-gray-300">
-                  Showing {filteredLocations.length} locations
+    // Calculate center from locations, or use default
+    const centerLat = locations.length > 0 
+        ? locations.reduce((sum, loc) => sum + loc.lat, 0) / locations.length 
+        : 28.6159;
+    const centerLng = locations.length > 0 
+        ? locations.reduce((sum, loc) => sum + loc.lng, 0) / locations.length 
+        : 77.2190;
+    const zoom = 14;
+
+    const filteredLocations = locations.filter(loc =>
+        loc.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    
+    // Get issues with locations
+    const issuesWithLocations = issues.filter(issue => 
+        issue.location && typeof issue.location === 'string'
+    ).map(issue => {
+        // Try to match issue location string with actual locations
+        const matchedLocation = locations.find(loc => 
+            issue.location.toLowerCase().includes(loc.name.toLowerCase())
+        );
+        return matchedLocation ? { ...issue, ...matchedLocation, isIssue: true } : null;
+    }).filter(Boolean);
+
+    const getLocationTypeColor = (type, isIssue = false) => {
+        if (isIssue) {
+            return '#ef4444'; // Red for issues
+        }
+        const colors = {
+            residential: '#3b82f6',
+            commercial: '#f59e0b',
+            park: '#16a34a',
+            road: '#6b7280',
+            educational: '#8b5cf6',
+            industrial: '#dc2626',
+            healthcare: '#ec4899',
+            transport: '#14b8a6',
+            general: '#6366f1'
+        };
+        return colors[type] || '#6b7280';
+    };
+
+    if (loading) {
+        return (
+            <UserLayout>
+                <div className="flex items-center justify-center h-[600px]">
+                    <div className="text-gray-600 dark:text-gray-400">Loading map...</div>
                 </div>
-              </div>
-            </>
-          )}
-        </div>
+            </UserLayout>
+        );
+    }
 
-        {/* Map Area */}
-        <div className="flex-1 bg-white dark:bg-slate-800 p-1 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 relative z-0 transition-all duration-300">
-          <MapComponent 
-            locations={filteredLocations} 
-            height="100%" 
-            onMarkerClick={handleMarkerClick}
-          />
-        </div>
-      </div>
-    </UserLayout>
-  );
+    return (
+        <UserLayout>
+            <div className="mb-6">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">City Map</h1>
+                <p className="text-gray-600 dark:text-gray-400 mt-2">
+                    Explore locations across the city using OpenStreetMap.
+                </p>
+            </div>
+
+            {/* Search */}
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-4 mb-6">
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                    <input
+                        type="text"
+                        placeholder="Search locations..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    />
+                </div>
+            </div>
+
+            {/* Map Container */}
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
+                <div className="relative w-full h-[600px] rounded-xl overflow-hidden">
+                    {/* OpenStreetMap iframe with multiple markers */}
+                    <iframe
+                        width="100%"
+                        height="100%"
+                        frameBorder="0"
+                        scrolling="no"
+                        marginHeight="0"
+                        marginWidth="0"
+                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${centerLng - 0.02},${centerLat - 0.015},${centerLng + 0.02},${centerLat + 0.015}&layer=mapnik`}
+                        style={{ border: 0 }}
+                        title="OpenStreetMap"
+                    />
+
+                    {/* Custom Location Markers Overlay */}
+                    <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 10 }}>
+                        {/* Regular Locations */}
+                        {filteredLocations.map((location) => {
+                            // Convert lat/lng to approximate pixel positions
+                            // This is a simple projection for demonstration
+                            const mapWidth = 100;
+                            const mapHeight = 100;
+                            
+                            // Normalize coordinates relative to the visible bbox
+                            const minLng = centerLng - 0.02;
+                            const maxLng = centerLng + 0.02;
+                            const minLat = centerLat - 0.015;
+                            const maxLat = centerLat + 0.015;
+                            
+                            const x = ((location.lng - minLng) / (maxLng - minLng)) * mapWidth;
+                            const y = ((maxLat - location.lat) / (maxLat - minLat)) * mapHeight;
+                            
+                            const isBlinking = blinkingLocation === location.id;
+                            
+                            return (
+                                <g key={location.id} className="pointer-events-auto cursor-pointer hover:opacity-80 transition-opacity">
+                                    {/* Pulsing circle */}
+                                    <circle
+                                        cx={`${x}%`}
+                                        cy={`${y}%`}
+                                        r="15"
+                                        fill={getLocationTypeColor(location.type)}
+                                        opacity="0.2"
+                                        className={isBlinking ? "animate-ping" : ""}
+                                    />
+                                    {/* Extra blink effect */}
+                                    {isBlinking && (
+                                        <>
+                                            <circle
+                                                cx={`${x}%`}
+                                                cy={`${y}%`}
+                                                r="20"
+                                                fill={getLocationTypeColor(location.type)}
+                                                opacity="0.4"
+                                                className="animate-ping"
+                                            />
+                                            <circle
+                                                cx={`${x}%`}
+                                                cy={`${y}%`}
+                                                r="25"
+                                                fill={getLocationTypeColor(location.type)}
+                                                opacity="0.3"
+                                                className="animate-ping"
+                                                style={{ animationDelay: '0.2s' }}
+                                            />
+                                        </>
+                                    )}
+                                    {/* Marker pin */}
+                                    <circle
+                                        cx={`${x}%`}
+                                        cy={`${y}%`}
+                                        r={isBlinking ? "10" : "8"}
+                                        fill={getLocationTypeColor(location.type)}
+                                        stroke="white"
+                                        strokeWidth={isBlinking ? "3" : "2"}
+                                        className={isBlinking ? "animate-pulse" : ""}
+                                    />
+                                    {/* Label */}
+                                    <text
+                                        x={`${x}%`}
+                                        y={`${y + 3}%`}
+                                        textAnchor="middle"
+                                        fill="white"
+                                        fontSize={isBlinking ? "12" : "10"}
+                                        fontWeight="bold"
+                                        className="drop-shadow-lg"
+                                    >
+                                        {location.name}
+                                    </text>
+                                </g>
+                            );
+                        })}
+                        
+                        {/* Issue Markers */}
+                        {issuesWithLocations.map((issue) => {
+                            const mapWidth = 100;
+                            const mapHeight = 100;
+                            
+                            const minLng = centerLng - 0.02;
+                            const maxLng = centerLng + 0.02;
+                            const minLat = centerLat - 0.015;
+                            const maxLat = centerLat + 0.015;
+                            
+                            const x = ((issue.lng - minLng) / (maxLng - minLng)) * mapWidth;
+                            const y = ((maxLat - issue.lat) / (maxLat - minLat)) * mapHeight;
+                            
+                            return (
+                                <g key={`issue-${issue.id}`} className="pointer-events-auto cursor-pointer">
+                                    {/* Pulsing alert circle */}
+                                    <circle
+                                        cx={`${x}%`}
+                                        cy={`${y}%`}
+                                        r="12"
+                                        fill="#ef4444"
+                                        opacity="0.3"
+                                        className="animate-ping"
+                                    />
+                                    {/* Alert icon background */}
+                                    <circle
+                                        cx={`${x}%`}
+                                        cy={`${y}%`}
+                                        r="8"
+                                        fill="#ef4444"
+                                        stroke="white"
+                                        strokeWidth="2"
+                                    />
+                                    {/* Exclamation mark */}
+                                    <text
+                                        x={`${x}%`}
+                                        y={`${y + 1}%`}
+                                        textAnchor="middle"
+                                        fill="white"
+                                        fontSize="10"
+                                        fontWeight="bold"
+                                    >
+                                        !
+                                    </text>
+                                </g>
+                            );
+                        })}
+                    </svg>
+
+                    {/* Overlay Controls */}
+                    <div className="absolute top-4 right-4 flex flex-col gap-2" style={{ zIndex: 20 }}>
+                        <a 
+                            href={`https://www.openstreetmap.org/?mlat=${centerLat}&mlon=${centerLng}&zoom=${zoom + 1}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-3 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                        >
+                            <ZoomIn size={20} className="text-gray-600 dark:text-gray-400" />
+                        </a>
+                        <a 
+                            href={`https://www.openstreetmap.org/?mlat=${centerLat}&mlon=${centerLng}&zoom=${zoom - 1}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-3 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                        >
+                            <ZoomOut size={20} className="text-gray-600 dark:text-gray-400" />
+                        </a>
+                        <a 
+                            href={`https://www.openstreetmap.org/?mlat=${centerLat}&mlon=${centerLng}&zoom=${zoom}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-3 border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                        >
+                            <Navigation size={20} className="text-gray-600 dark:text-gray-400" />
+                        </a>
+                    </div>
+
+                    {/* Legend */}
+                    <div className="absolute bottom-4 left-4 bg-white dark:bg-slate-800 rounded-lg shadow-lg p-4 border border-gray-200 dark:border-slate-700 max-w-xs">
+                        <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-3">Legend</h3>
+                        <div className="space-y-2 text-xs">
+                            <div className="flex items-center gap-2">
+                                <AlertCircle size={16} className="text-red-500" />
+                                <span className="text-gray-600 dark:text-gray-400">Active Issue</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <MapPin size={16} className="text-blue-500" />
+                                <span className="text-gray-600 dark:text-gray-400">City Location</span>
+                            </div>
+                        </div>
+                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-600">
+                            <div className="text-xs font-semibold text-gray-900 dark:text-white mb-2">Location Types</div>
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#3b82f6' }}></div>
+                                    <span className="text-gray-600 dark:text-gray-400">Residential</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#f59e0b' }}></div>
+                                    <span className="text-gray-600 dark:text-gray-400">Commercial</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#16a34a' }}></div>
+                                    <span className="text-gray-600 dark:text-gray-400">Park</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#14b8a6' }}></div>
+                                    <span className="text-gray-600 dark:text-gray-400">Transport</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#8b5cf6' }}></div>
+                                    <span className="text-gray-600 dark:text-gray-400">Educational</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#ec4899' }}></div>
+                                    <span className="text-gray-600 dark:text-gray-400">Healthcare</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* City Badge */}
+                    <div className="absolute top-4 left-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg shadow-lg px-4 py-2">
+                        <div className="text-lg font-bold">E-City</div>
+                        <div className="text-xs opacity-90">
+                            {locations.length} Locations • {issuesWithLocations.length} Issues
+                        </div>
+                    </div>
+                </div>
+
+                {/* Location List */}
+                <div className="mt-6">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Locations</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {filteredLocations.map((location) => (
+                            <div
+                                key={location.id}
+                                onClick={() => {
+                                    setSelectedLocation(location);
+                                    setBlinkingLocation(location.id);
+                                    // Stop blinking after 3 seconds
+                                    setTimeout(() => setBlinkingLocation(null), 3000);
+                                    // Scroll to map
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }}
+                                className={`p-4 rounded-lg border cursor-pointer transition-all ${
+                                    blinkingLocation === location.id 
+                                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-lg scale-105' 
+                                        : 'border-gray-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500'
+                                }`}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div
+                                        className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                                            blinkingLocation === location.id ? 'animate-pulse scale-110' : ''
+                                        }`}
+                                        style={{ backgroundColor: getLocationTypeColor(location.type) }}
+                                    >
+                                        <MapPin size={20} className="text-white" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="font-semibold text-gray-900 dark:text-white">{location.name}</div>
+                                        <div className="text-xs text-gray-600 dark:text-gray-400 capitalize">{location.type}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* External Map Link */}
+                <div className="mt-6 text-center">
+                    <a
+                        href={`https://www.openstreetmap.org/?mlat=${centerLat}&mlon=${centerLng}#map=${zoom}/${centerLat}/${centerLng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                    >
+                        <MapPin size={20} />
+                        Open in OpenStreetMap
+                    </a>
+                </div>
+            </div>
+        </UserLayout>
+    );
 };
 
 export default CityMap;

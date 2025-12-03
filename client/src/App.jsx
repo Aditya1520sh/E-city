@@ -11,6 +11,7 @@ const Home = lazy(() => import('./pages/Home'));
 const ReportIssue = lazy(() => import('./pages/ReportIssue'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Login = lazy(() => import('./pages/Login'));
+const Signup = lazy(() => import('./pages/Signup'));
 const GoogleCallback = lazy(() => import('./pages/GoogleCallback'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const AdminIssues = lazy(() => import('./pages/AdminIssues'));
@@ -25,6 +26,10 @@ const CityMap = lazy(() => import('./pages/CityMap'));
 const UserEvents = lazy(() => import('./pages/UserEvents'));
 const UserAnnouncements = lazy(() => import('./pages/UserAnnouncements'));
 const Help = lazy(() => import('./pages/Help'));
+const Documentation = lazy(() => import('./pages/Documentation'));
+const ApiAccess = lazy(() => import('./pages/ApiAccess'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 // Loading component
@@ -46,8 +51,13 @@ function App() {
               {/* Public Routes */}
               <Route path="/" element={<><Navbar /><Home /></>} />
               <Route path="/login" element={<><Navbar /><Login /></>} />
+              <Route path="/signup" element={<Signup />} />
+              <Route path="/documentation" element={<><Navbar /><Documentation /></>} />
+              <Route path="/api-access" element={<><Navbar /><ApiAccess /></>} />
+              <Route path="/privacy-policy" element={<><Navbar /><PrivacyPolicy /></>} />
+              <Route path="/terms-of-service" element={<><Navbar /><TermsOfService /></>} />
               <Route path="/auth/google/callback" element={<GoogleCallback />} />
-              
+
               {/* User Routes */}
               <Route element={<ProtectedRoute allowedRoles={['citizen']} />}>
                 <Route path="/dashboard" element={<Dashboard />} />
@@ -73,7 +83,7 @@ function App() {
 
               {/* 404 Not Found */}
               <Route path="/404" element={<NotFound />} />
-              
+
               {/* Catch-all route - redirect to 404 */}
               <Route path="*" element={<NotFound />} />
             </Routes>

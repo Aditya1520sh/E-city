@@ -1,16 +1,10 @@
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import path from 'path'
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => {
-  // Load env file from private folder
-  const env = loadEnv(mode, path.resolve(__dirname, '../private'), 'VITE_')
-  
-  return {
-    envDir: '../private',
-    envPrefix: 'VITE_',
-    plugins: [react()],
+export default defineConfig({
+  // Default Vite behavior: read env from project root (`client/.env*`) and Vercel env
+  plugins: [react()],
   build: {
     rollupOptions: {
       output: {
@@ -33,17 +27,16 @@ export default defineConfig(({ mode }) => {
       }
     }
   },
-  // Optimize dev server
+  // Dev server
   server: {
     port: 5173,
     strictPort: false,
     host: true
   },
-  // Optimize preview
+  // Preview server
   preview: {
     port: 4173,
     strictPort: false,
     host: true
   }
-}
 })

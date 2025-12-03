@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+// Always route frontend requests through our server `/api`.
+// The server will read its own `.env` and call external APIs.
+// In development, use the backend server URL if different from frontend
+const API_BASE = import.meta.env.VITE_API_URL || 
+  (import.meta.env.DEV ? 'http://localhost:3000/api' : `${window.location.origin}/api`);
 
 // Create axios instance with base config
 const axiosInstance = axios.create({

@@ -5,10 +5,11 @@ const FlipCard = ({ frontContent, backContent, className = "", height = "h-80" }
   const [isFlipped, setIsFlipped] = useState(false);
 
   return (
-    <div 
-      className={`relative w-full ${height} cursor-pointer ${className}`} 
+    <div
+      className={`relative w-full ${height} cursor-pointer ${className}`}
       onMouseEnter={() => setIsFlipped(true)}
       onMouseLeave={() => setIsFlipped(false)}
+      onClick={() => setIsFlipped(!isFlipped)}
       style={{ perspective: "1000px" }}
     >
       <motion.div
@@ -19,20 +20,20 @@ const FlipCard = ({ frontContent, backContent, className = "", height = "h-80" }
         style={{ transformStyle: "preserve-3d" }}
       >
         {/* Front */}
-        <div 
-            className="absolute inset-0 w-full h-full"
-            style={{ backfaceVisibility: 'hidden' }}
+        <div
+          className="absolute inset-0 w-full h-full"
+          style={{ backfaceVisibility: 'hidden' }}
         >
           {frontContent}
         </div>
 
         {/* Back */}
-        <div 
-            className="absolute inset-0 w-full h-full"
-            style={{ 
-                backfaceVisibility: 'hidden', 
-                transform: 'rotateY(180deg)' 
-            }}
+        <div
+          className="absolute inset-0 w-full h-full"
+          style={{
+            backfaceVisibility: 'hidden',
+            transform: 'rotateY(180deg)'
+          }}
         >
           {backContent}
         </div>

@@ -1,9 +1,25 @@
 const express = require('express');
+const path = require('path');
+const fs = require('fs');
 
 // Load environment variables from file in local development only
 // In Vercel, environment variables are injected automatically
-if (!process.env.VERCEL) {
-    require('dotenv').config({ path: '../private/.env.server' });
+// VERCEL_ENV is set by Vercel to 'production', 'preview', or 'development'
+if (!process.env.VERCEL_ENV) {
+    const serverEnv = path.join(__dirname, '../.env');
+    if (fs.existsSync(serverEnv)) {
+        require('dotenv').config({ path: serverEnv });
+    } else {
+        require('dotenv').config();
+    }
+} else {
+    // In Vercel, ensure critical env vars exist
+    if (!process.env.DATABASE_URL) {
+        console.error('MISSING: DATABASE_URL');
+    }
+    if (!process.env.JWT_SECRET) {
+        console.error('MISSING: JWT_SECRET');
+    }
 }
 
 const cors = require('cors');
@@ -21,12 +37,19 @@ const locationRoutes = require('./routes/locations');
 const userRoutes = require('./routes/users');
 const settingRoutes = require('./routes/settings');
 const departmentRoutes = require('./routes/departments');
+const uploadRoutes = require('./routes/uploadRoutes');
+const { startEventScheduler } = require('./services/eventScheduler');
 
-const path = require('path');
+// path is already required above
 
 const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3000;
+
+// Start the event scheduler only in non-serverless environment (checks every 24 hours)
+if (!process.env.VERCEL_ENV) {
+    startEventScheduler(24);
+}
 
 // Security: Helmet middleware for security headers
 app.use(helmet({
@@ -38,7 +61,9 @@ app.use(helmet({
 const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:3000',
-    process.env.CLIENT_URL
+    'https://aakrti.vercel.app',
+    process.env.CLIENT_URL,
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
 ].filter(Boolean);
 
 app.use(cors({
@@ -46,16 +71,19 @@ app.use(cors({
         // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
 
-        if (allowedOrigins.indexOf(origin) !== -1) {
+        // Allow all Vercel preview/production deployments
+        if (origin?.endsWith('.vercel.app')) {
+            callback(null, true);
+        } else if (allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
             // In production, reject unauthorized origins for security
-            if (process.env.NODE_ENV === 'production') {
+            if (process.env.NODE_ENV === 'production' && !process.env.VERCEL_ENV) {
                 console.warn(`CORS: Rejected request from unauthorized origin: ${origin}`);
                 callback(new Error('Not allowed by CORS'));
             } else {
                 // Allow in development for easier testing
-                console.log(`CORS: Allowing origin in development: ${origin}`);
+                console.log(`CORS: Allowing origin: ${origin}`);
                 callback(null, true);
             }
         }
@@ -75,7 +103,7 @@ const authLimiter = rateLimit({
 // Security: General rate limiting
 const generalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    max: 500, // Limit each IP to 500 requests per windowMs (increased for development)
     message: 'Too many requests, please try again later.',
     standardHeaders: true,
     legacyHeaders: false,
@@ -84,24 +112,27 @@ const generalLimiter = rateLimit({
 app.use(express.json({ limit: '10mb' })); // Limit payload size
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Session configuration for Passport
-// Validate SESSION_SECRET exists
-const SESSION_SECRET = process.env.SESSION_SECRET;
-if (!SESSION_SECRET) {
-    console.error('CRITICAL: SESSION_SECRET environment variable is required');
-    process.exit(1);
+// Session configuration for Passport (only in non-serverless environment)
+if (!process.env.VERCEL_ENV) {
+    // Validate SESSION_SECRET exists for local dev
+    const SESSION_SECRET = process.env.SESSION_SECRET;
+    if (!SESSION_SECRET) {
+        console.warn('WARNING: SESSION_SECRET environment variable missing - sessions disabled');
+    } else {
+        app.use(session({
+            secret: SESSION_SECRET,
+            resave: false,
+            saveUninitialized: false,
+            cookie: { secure: process.env.NODE_ENV === 'production' }
+        }));
+        // Initialize Passport with session support
+        app.use(passport.initialize());
+        app.use(passport.session());
+    }
+} else {
+    // Serverless (Vercel) - use passport without sessions
+    app.use(passport.initialize());
 }
-
-app.use(session({
-    secret: SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: { secure: process.env.NODE_ENV === 'production' }
-}));
-
-// Initialize Passport
-app.use(passport.initialize());
-app.use(passport.session());
 
 // Apply general rate limiting to all routes
 app.use(generalLimiter);
@@ -120,6 +151,18 @@ app.use('/api/locations', locationRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/departments', departmentRoutes);
+app.use('/upload', uploadRoutes);
+
+// Health endpoint with MongoDB ping
+app.get('/api/health', async (req, res) => {
+    try {
+        // For MongoDB, Prisma supports $runCommandRaw
+        const ping = await prisma.$runCommandRaw({ ping: 1 });
+        res.json({ ok: true, uptime: process.uptime(), db: ping?.ok === 1 ? 'up' : 'unknown' });
+    } catch (err) {
+        res.status(503).json({ ok: false, uptime: process.uptime(), error: err.message });
+    }
+});
 
 app.get('/api/stats', async (req, res) => {
     try {

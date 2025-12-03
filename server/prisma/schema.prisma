@@ -13,7 +13,7 @@ model User {
   password  String   // No default - must be explicitly set (hashed for regular users, empty for OAuth)
   name      String?
   role      String   @default("citizen") // citizen, admin
-  googleId  String?  @unique
+  googleId  String?
   avatar    String?
   createdAt DateTime @default(now())
   issues    Issue[]
@@ -69,7 +69,7 @@ model Comment {
   issueId   String   @db.ObjectId
   issue     Issue    @relation(fields: [issueId], references: [id])
   userId    String   @db.ObjectId
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Service {
@@ -140,6 +140,7 @@ model Location {
   address   String?
   contact   String?
   imageUrl  String?
+  description String?
 }
 
 model Setting {
@@ -157,6 +158,7 @@ model Department {
   email       String?
   location    String?
   description String?
+  imageUrl    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

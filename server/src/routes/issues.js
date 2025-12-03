@@ -2,8 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
 const multer = require('multer');
-const cloudinary = require('../config/cloudinary');
-const streamifier = require('streamifier');
+const uploadToSupabase = require('../services/uploadToSupabase');
 const authenticateToken = require('../middleware/auth');
 const { body, param, validationResult } = require('express-validator');
 
@@ -13,7 +12,7 @@ const router = express.Router();
 // Apply authentication middleware to all routes
 router.use(authenticateToken);
 
-// Configure Multer for file uploads (memory storage for Cloudinary)
+// Configure Multer for file uploads (memory storage for Supabase)
 const storage = multer.memoryStorage();
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpeg|jpg|png|gif|webp/;
@@ -51,7 +50,7 @@ const validateStatusUpdate = [
 // Get all issues with filtering
 router.get('/', async (req, res) => {
   const { category, status, search, userId } = req.query;
-
+  
   let where = {};
   if (category && category !== 'all') where.category = category;
   if (status && status !== 'all') where.status = status;
@@ -68,11 +67,8 @@ router.get('/', async (req, res) => {
     const issues = await prisma.issue.findMany({
       where,
       orderBy: { createdAt: 'desc' },
-      include: {
-        user: true,
-        _count: {
-          select: { comments: true }
-        }
+      include: { 
+        user: true
       }
     });
     res.json(issues);
@@ -87,7 +83,7 @@ router.get('/:id', async (req, res) => {
   try {
     const issue = await prisma.issue.findUnique({
       where: { id: id },
-      include: {
+      include: { 
         user: true,
         comments: {
           include: { user: true },
@@ -113,33 +109,11 @@ router.post('/', upload.single('image'), validateCreateIssue, async (req, res) =
   let imageUrl = null;
 
   if (req.file) {
-    // Validate Cloudinary configuration
-    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-      console.error('CRITICAL: Cloudinary environment variables are not configured');
-      return res.status(500).json({
-        error: 'Image upload service is not configured. Please contact the administrator.'
-      });
-    }
-
     try {
-      console.log('Uploading to Cloudinary...');
-      const uploadResult = await new Promise((resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream({ resource_type: 'image' }, (error, result) => {
-          if (error) {
-            console.error('Cloudinary upload error:', error);
-            return reject(error);
-          }
-          resolve(result);
-        });
-        streamifier.createReadStream(req.file.buffer).pipe(uploadStream);
-      });
-      imageUrl = uploadResult.secure_url;
-      console.log('Cloudinary upload success:', imageUrl);
+      imageUrl = await uploadToSupabase(req.file);
     } catch (err) {
-      console.error('Cloudinary upload failed:', err.message, err);
-      return res.status(500).json({
-        error: 'Failed to upload image. Please try again or report the issue without an image.'
-      });
+      console.error('Image upload failed, proceeding without image:', err.message);
+      imageUrl = null;
     }
   }
 
@@ -170,7 +144,7 @@ router.patch('/:id/status', validateStatusUpdate, async (req, res) => {
 
   const { id } = req.params;
   const { status, resolutionTime, resolutionRemarks, resolutionOfficer } = req.body;
-
+  
   const data = { status };
   if (resolutionTime) data.resolutionTime = resolutionTime;
   if (resolutionRemarks) data.resolutionRemarks = resolutionRemarks;

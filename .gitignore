@@ -18,3 +18,4 @@ private/
 server/.env
 client/.env
 
+.env*.local

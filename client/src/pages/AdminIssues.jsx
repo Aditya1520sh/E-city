@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import axiosInstance from '../utils/axios';
+import axiosInstance, { API_BASE } from '../utils/axios';
 import { Search, Filter, Download, Eye, Trash2, MapPin, Calendar, User, MessageSquare, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
 import AdminLayout from '../layouts/AdminLayout';
 import { useToast } from '../context/ToastContext';
+
+// Calculate ROOT_BASE from API_BASE for image URLs
+const ROOT_BASE = typeof window !== 'undefined' ? window.location.origin : '';
 
 const AdminIssues = () => {
   const [issues, setIssues] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState('');
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [selectedIssue, setSelectedIssue] = useState(null);
@@ -20,34 +24,37 @@ const AdminIssues = () => {
     estimatedCompletion: '',
     actionTaken: '',
     progressUpdate: '',
-    
+
     // Resolution fields
     resolutionTime: '',
     resolutionRemarks: '',
     resolutionOfficer: '',
     costIncurred: '',
     resourcesUsed: '',
-    
+
     // Rejection fields
     rejectionReason: '',
     alternativeSuggestion: ''
   });
-  const { addToast } = useToast();
+  const [selectedDeptDetails, setSelectedDeptDetails] = useState(null);
+  const { showToast } = useToast();
 
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-  const ROOT_BASE = API_BASE.replace(/\/api$/, '');
   useEffect(() => {
     fetchIssues();
     fetchDepartments();
   }, []);
 
   const fetchIssues = async () => {
+    setLoading(true);
     try {
       const res = await axiosInstance.get('/issues');
-      setIssues(res.data);
+      setIssues(Array.isArray(res.data) ? res.data : []);
+      setFetchError('');
     } catch (error) {
       console.error('Error fetching issues:', error);
-      addToast('Failed to load issues', 'error');
+      const message = error.response?.data?.error || 'Failed to load issues';
+      setFetchError(message);
+      showToast(message, 'error');
     } finally {
       setLoading(false);
     }
@@ -69,7 +76,7 @@ const AdminIssues = () => {
       if (selectedIssue && selectedIssue.id === id) {
         setSelectedIssue({ ...selectedIssue, status, ...extraData });
       }
-      addToast(`Status updated to ${status}`, 'success');
+      showToast(`Status updated to ${status}`, 'success');
       setShowStatusModal(false);
       setStatusForm({
         assignedOfficer: '',
@@ -85,37 +92,54 @@ const AdminIssues = () => {
         rejectionReason: '',
         alternativeSuggestion: ''
       });
+      setSelectedDeptDetails(null);
     } catch (error) {
-      addToast('Error updating status', 'error');
+      showToast('Error updating status', 'error');
     }
   };
 
   const handleDepartmentChange = (deptName) => {
     const dept = departments.find(d => d.name === deptName);
-    setStatusForm({
-      ...statusForm,
-      assignedDepartment: deptName,
-      assignedOfficer: dept?.head || ''
-    });
+    setSelectedDeptDetails(dept || null);
+
+    // Update officer field based on current status action
+    if (statusAction === 'resolved') {
+      setStatusForm({
+        ...statusForm,
+        assignedDepartment: deptName,
+        resolutionOfficer: dept?.head || ''
+      });
+    } else {
+      setStatusForm({
+        ...statusForm,
+        assignedDepartment: deptName,
+        assignedOfficer: dept?.head || ''
+      });
+    }
   };
 
   const handleStatusClick = (status) => {
     setStatusAction(status);
-    
+    setSelectedDeptDetails(null);
+
     if (status === 'in-progress') {
+      // If already has department assigned, try to find it to pre-fill details
+      const existingDept = departments.find(d => d.name === selectedIssue.assignedDepartment);
+      if (existingDept) setSelectedDeptDetails(existingDept);
+
       setStatusForm({
-        assignedOfficer: '',
-        assignedDepartment: '',
+        assignedOfficer: selectedIssue.assignedOfficer || '',
+        assignedDepartment: selectedIssue.assignedDepartment || '',
         estimatedCompletion: new Date().toISOString().slice(0, 16),
-        actionTaken: '',
-        progressUpdate: ''
+        actionTaken: selectedIssue.actionTaken || '',
+        progressUpdate: selectedIssue.progressUpdate || ''
       });
       setShowStatusModal(true);
     } else if (status === 'resolved') {
       setStatusForm({
         resolutionTime: new Date().toISOString().slice(0, 16),
         resolutionRemarks: '',
-        resolutionOfficer: '',
+        resolutionOfficer: selectedIssue.assignedOfficer || '', // Pre-fill with assigned officer
         costIncurred: '',
         resourcesUsed: ''
       });
@@ -133,25 +157,25 @@ const AdminIssues = () => {
 
   const submitStatusChange = (e) => {
     e.preventDefault();
-    
+
     // Validate required fields based on status
     if (statusAction === 'in-progress') {
       if (!statusForm.assignedOfficer || !statusForm.assignedDepartment || !statusForm.actionTaken) {
-        addToast('Please fill all required fields: Assigned Officer, Department, and Action Taken', 'error');
+        showToast('Please fill all required fields: Assigned Officer, Department, and Action Taken', 'error');
         return;
       }
     } else if (statusAction === 'resolved') {
-      if (!statusForm.resolutionOfficer || !statusForm.resolutionRemarks) {
-        addToast('Please fill all required fields: Resolution Officer and Remarks', 'error');
+      if (!statusForm.resolutionOfficer || !statusForm.resolutionRemarks || !statusForm.costIncurred || !statusForm.resourcesUsed) {
+        showToast('Please fill all required fields: Resolution Officer, Remarks, Cost, and Equipment/Resources', 'error');
         return;
       }
     } else if (statusAction === 'rejected') {
       if (!statusForm.rejectionReason) {
-        addToast('Please provide a rejection reason', 'error');
+        showToast('Please provide a rejection reason', 'error');
         return;
       }
     }
-    
+
     updateStatus(selectedIssue.id, statusAction, statusForm);
   };
 
@@ -163,17 +187,17 @@ const AdminIssues = () => {
       if (selectedIssue && selectedIssue.id === id) {
         setSelectedIssue(null);
       }
-      addToast('Issue deleted successfully', 'success');
+      showToast('Issue deleted successfully', 'success');
     } catch (error) {
-      addToast('Error deleting issue', 'error');
+      showToast('Error deleting issue', 'error');
     }
   };
 
   const handleExport = () => {
-    const csvContent = "data:text/csv;charset=utf-8," 
+    const csvContent = "data:text/csv;charset=utf-8,"
       + "ID,Title,Description,Category,Status,Location,Reporter,Date,Upvotes,Resolution Officer,Resolution Time,Resolution Remarks\n"
       + issues.map(e => `${e.id},"${e.title}","${e.description}",${e.category},${e.status},"${e.location}","${e.user?.name || 'Anonymous'}",${new Date(e.createdAt).toLocaleDateString()},${e.upvotes},"${e.resolutionOfficer || ''}","${e.resolutionTime || ''}","${e.resolutionRemarks || ''}"`).join("\n");
-    
+
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -184,9 +208,9 @@ const AdminIssues = () => {
 
   const filteredIssues = issues.filter(issue => {
     const matchesFilter = filter === 'all' || issue.status === filter;
-    const matchesSearch = issue.title.toLowerCase().includes(search.toLowerCase()) || 
-                          issue.description.toLowerCase().includes(search.toLowerCase()) ||
-                          issue.location.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = issue.title.toLowerCase().includes(search.toLowerCase()) ||
+      issue.description.toLowerCase().includes(search.toLowerCase()) ||
+      issue.location.toLowerCase().includes(search.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
@@ -208,7 +232,7 @@ const AdminIssues = () => {
             <h1 className="text-3xl font-bold text-slate-800 dark:text-white">Issue Reports</h1>
             <p className="text-slate-500 dark:text-slate-400">Manage and track all reported issues in detail.</p>
           </div>
-          <button 
+          <button
             onClick={handleExport}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center shadow-sm"
           >
@@ -219,7 +243,7 @@ const AdminIssues = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden">
           {/* Issues List */}
-          <div className="lg:col-span-1 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden">
+          <div className={`lg:col-span-1 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden ${selectedIssue ? 'hidden lg:flex' : 'flex'}`}>
             <div className="p-4 border-b border-slate-200 dark:border-slate-700 space-y-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
@@ -236,52 +260,70 @@ const AdminIssues = () => {
                   <button
                     key={f}
                     onClick={() => setFilter(f)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium capitalize whitespace-nowrap transition-colors ${
-                      filter === f 
-                        ? 'bg-slate-800 text-white dark:bg-white dark:text-slate-900' 
-                        : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
-                    }`}
+                    className={`px-3 py-1 rounded-full text-xs font-medium capitalize whitespace-nowrap transition-colors ${filter === f
+                      ? 'bg-slate-800 text-white dark:bg-white dark:text-slate-900'
+                      : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                      }`}
                   >
                     {f}
                   </button>
                 ))}
               </div>
             </div>
-            
+
             <div className="overflow-y-auto flex-1 p-2 space-y-2">
-              {filteredIssues.map(issue => (
-                <div 
-                  key={issue.id}
-                  onClick={() => setSelectedIssue(issue)}
-                  className={`p-4 rounded-lg cursor-pointer transition-all border ${
-                    selectedIssue?.id === issue.id
-                      ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 shadow-sm'
-                      : 'bg-white border-transparent hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${getStatusColor(issue.status)}`}>
-                      {issue.status}
-                    </span>
-                    <span className="text-xs text-slate-400">{new Date(issue.createdAt).toLocaleDateString()}</span>
-                  </div>
-                  <h3 className="font-bold text-slate-800 dark:text-white line-clamp-1 mb-1">{issue.title}</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{issue.description}</p>
+              {fetchError ? (
+                <div className="p-6 text-center bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <p className="text-amber-700 dark:text-amber-300 font-semibold mb-3">{fetchError}</p>
+                  <button
+                    onClick={fetchIssues}
+                    className="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors"
+                  >
+                    Try again
+                  </button>
                 </div>
-              ))}
-              {filteredIssues.length === 0 && (
-                <div className="text-center py-8 text-slate-400">No issues found</div>
+              ) : (
+                <>
+                  {filteredIssues.map(issue => (
+                    <div
+                      key={issue.id}
+                      onClick={() => setSelectedIssue(issue)}
+                      className={`p-4 rounded-lg cursor-pointer transition-all border ${selectedIssue?.id === issue.id
+                        ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 shadow-sm'
+                        : 'bg-white border-transparent hover:bg-slate-50 dark:bg-slate-800 dark:hover:bg-slate-700'
+                        }`}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${getStatusColor(issue.status)}`}>
+                          {issue.status}
+                        </span>
+                        <span className="text-xs text-slate-400">{new Date(issue.createdAt).toLocaleDateString()}</span>
+                      </div>
+                      <h3 className="font-bold text-slate-800 dark:text-white line-clamp-1 mb-1">{issue.title}</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{issue.description}</p>
+                    </div>
+                  ))}
+                  {filteredIssues.length === 0 && (
+                    <div className="text-center py-8 text-slate-400">No issues found</div>
+                  )}
+                </>
               )}
             </div>
           </div>
 
           {/* Issue Details */}
-          <div className="lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden">
+          <div className={`lg:col-span-2 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden ${selectedIssue ? 'flex' : 'hidden lg:flex'}`}>
             {selectedIssue ? (
               <div className="flex flex-col h-full">
                 {/* Header */}
                 <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-start bg-slate-50 dark:bg-slate-800/50">
                   <div>
+                    <button
+                      onClick={() => setSelectedIssue(null)}
+                      className="lg:hidden mb-2 text-sm text-blue-600 dark:text-blue-400 font-medium flex items-center hover:underline"
+                    >
+                      ← Back to List
+                    </button>
                     <div className="flex items-center space-x-3 mb-2">
                       <h2 className="text-2xl font-bold text-slate-800 dark:text-white">{selectedIssue.title}</h2>
                       <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border ${getStatusColor(selectedIssue.status)}`}>
@@ -294,7 +336,7 @@ const AdminIssues = () => {
                     </div>
                   </div>
                   <div className="flex space-x-2">
-                    <button 
+                    <button
                       onClick={() => deleteIssue(selectedIssue.id)}
                       className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                       title="Delete Issue"
@@ -341,7 +383,7 @@ const AdminIssues = () => {
                       </div>
                     </div>
                   )}
-                  
+
                   {selectedIssue.status === 'resolved' && (
                     <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg mb-6 border border-green-100 dark:border-green-800">
                       <h4 className="text-green-800 dark:text-green-300 font-bold mb-2 flex items-center">
@@ -374,9 +416,9 @@ const AdminIssues = () => {
                     <div>
                       {selectedIssue.imageUrl && (
                         <div className="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm">
-                          <img 
-                            src={`${ROOT_BASE}${selectedIssue.imageUrl}`} 
-                            alt="Issue evidence" 
+                          <img
+                            src={selectedIssue.imageUrl.startsWith('http') ? selectedIssue.imageUrl : `${ROOT_BASE}${selectedIssue.imageUrl}`}
+                            alt="Issue evidence"
                             className="w-full h-auto object-cover"
                           />
                         </div>
@@ -415,41 +457,37 @@ const AdminIssues = () => {
                     <div className="flex flex-col sm:flex-row gap-4">
                       <button
                         onClick={() => handleStatusClick('pending')}
-                        className={`flex-1 py-3 rounded-lg font-medium transition-all ${
-                          selectedIssue.status === 'pending'
-                            ? 'bg-amber-500 text-white ring-2 ring-amber-600 ring-offset-2 shadow-lg'
-                            : 'bg-white border border-slate-200 text-slate-600 hover:bg-amber-50'
-                        }`}
+                        className={`flex-1 py-3 rounded-lg font-medium transition-all ${selectedIssue.status === 'pending'
+                          ? 'bg-amber-500 text-white ring-2 ring-amber-600 ring-offset-2 shadow-lg'
+                          : 'bg-white border border-slate-200 text-slate-600 hover:bg-amber-50'
+                          }`}
                       >
                         Pending
                       </button>
                       <button
                         onClick={() => handleStatusClick('in-progress')}
-                        className={`flex-1 py-3 rounded-lg font-medium transition-all ${
-                          selectedIssue.status === 'in-progress'
-                            ? 'bg-blue-500 text-white ring-2 ring-blue-600 ring-offset-2 shadow-lg'
-                            : 'bg-white border border-slate-200 text-slate-600 hover:bg-blue-50'
-                        }`}
+                        className={`flex-1 py-3 rounded-lg font-medium transition-all ${selectedIssue.status === 'in-progress'
+                          ? 'bg-blue-500 text-white ring-2 ring-blue-600 ring-offset-2 shadow-lg'
+                          : 'bg-white border border-slate-200 text-slate-600 hover:bg-blue-50'
+                          }`}
                       >
                         In Progress
                       </button>
                       <button
                         onClick={() => handleStatusClick('resolved')}
-                        className={`flex-1 py-3 rounded-lg font-medium transition-all ${
-                          selectedIssue.status === 'resolved'
-                            ? 'bg-green-500 text-white ring-2 ring-green-600 ring-offset-2 shadow-lg'
-                            : 'bg-white border border-slate-200 text-slate-600 hover:bg-green-50'
-                        }`}
+                        className={`flex-1 py-3 rounded-lg font-medium transition-all ${selectedIssue.status === 'resolved'
+                          ? 'bg-green-500 text-white ring-2 ring-green-600 ring-offset-2 shadow-lg'
+                          : 'bg-white border border-slate-200 text-slate-600 hover:bg-green-50'
+                          }`}
                       >
                         Resolved
                       </button>
                       <button
                         onClick={() => handleStatusClick('rejected')}
-                        className={`flex-1 py-3 rounded-lg font-medium transition-all ${
-                          selectedIssue.status === 'rejected'
-                            ? 'bg-red-500 text-white ring-2 ring-red-600 ring-offset-2 shadow-lg'
-                            : 'bg-white border border-slate-200 text-slate-600 hover:bg-red-50'
-                        }`}
+                        className={`flex-1 py-3 rounded-lg font-medium transition-all ${selectedIssue.status === 'rejected'
+                          ? 'bg-red-500 text-white ring-2 ring-red-600 ring-offset-2 shadow-lg'
+                          : 'bg-white border border-slate-200 text-slate-600 hover:bg-red-50'
+                          }`}
                       >
                         Rejected
                       </button>
@@ -478,7 +516,7 @@ const AdminIssues = () => {
                 {statusAction === 'resolved' && 'Mark as Resolved'}
                 {statusAction === 'rejected' && 'Reject Issue'}
               </h3>
-              
+
               <form onSubmit={submitStatusChange} className="space-y-4">
                 {/* In Progress Form */}
                 {statusAction === 'in-progress' && (
@@ -487,21 +525,21 @@ const AdminIssues = () => {
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Assigned Officer <span className="text-red-500">*</span>
                       </label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         required
                         placeholder="Officer name"
                         className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                         value={statusForm.assignedOfficer}
-                        onChange={e => setStatusForm({...statusForm, assignedOfficer: e.target.value})}
+                        onChange={e => setStatusForm({ ...statusForm, assignedOfficer: e.target.value })}
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Assigned Department <span className="text-red-500">*</span>
                       </label>
-                      <select 
+                      <select
                         required
                         className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                         value={statusForm.assignedDepartment}
@@ -513,133 +551,198 @@ const AdminIssues = () => {
                         ))}
                       </select>
                     </div>
-                    
+
+                    {selectedDeptDetails && (
+                      <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800 text-sm">
+                        <h4 className="font-bold text-blue-800 dark:text-blue-300 mb-2">Department & Officer Details</h4>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <span className="block text-xs text-blue-600/70 dark:text-blue-400 uppercase font-bold">Department</span>
+                            <span className="text-blue-900 dark:text-blue-100">{selectedDeptDetails.name}</span>
+                          </div>
+                          <div>
+                            <span className="block text-xs text-blue-600/70 dark:text-blue-400 uppercase font-bold">Head Officer</span>
+                            <span className="text-blue-900 dark:text-blue-100">{selectedDeptDetails.head || 'N/A'}</span>
+                          </div>
+                          <div>
+                            <span className="block text-xs text-blue-600/70 dark:text-blue-400 uppercase font-bold">Contact</span>
+                            <span className="text-blue-900 dark:text-blue-100">{selectedDeptDetails.contact || 'N/A'}</span>
+                          </div>
+                          <div>
+                            <span className="block text-xs text-blue-600/70 dark:text-blue-400 uppercase font-bold">Email</span>
+                            <span className="text-blue-900 dark:text-blue-100">{selectedDeptDetails.email || 'N/A'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                        Assigned Officer <span className="text-red-500">*</span>
-                        {statusForm.assignedOfficer && <span className="text-green-600 text-xs ml-2">(Auto-assigned from department)</span>}
+                        Assigned Officer Name (Editable) <span className="text-red-500">*</span>
                       </label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         required
                         placeholder="Officer name (auto-filled from department)"
                         className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                         value={statusForm.assignedOfficer}
-                        onChange={e => setStatusForm({...statusForm, assignedOfficer: e.target.value})}
+                        onChange={e => setStatusForm({ ...statusForm, assignedOfficer: e.target.value })}
                       />
-                      <p className="text-xs text-slate-500 mt-1">Auto-assigned when department is selected. You can edit if needed.</p>
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Estimated Completion Date
                       </label>
-                      <input 
-                        type="datetime-local" 
+                      <input
+                        type="datetime-local"
                         className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                         value={statusForm.estimatedCompletion}
-                        onChange={e => setStatusForm({...statusForm, estimatedCompletion: e.target.value})}
+                        onChange={e => setStatusForm({ ...statusForm, estimatedCompletion: e.target.value })}
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Action Taken <span className="text-red-500">*</span>
                       </label>
-                      <textarea 
+                      <textarea
                         required
                         placeholder="Describe the actions being taken..."
                         className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white h-24"
                         value={statusForm.actionTaken}
-                        onChange={e => setStatusForm({...statusForm, actionTaken: e.target.value})}
+                        onChange={e => setStatusForm({ ...statusForm, actionTaken: e.target.value })}
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Progress Update
                       </label>
-                      <textarea 
+                      <textarea
                         placeholder="Current progress notes..."
                         className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white h-20"
                         value={statusForm.progressUpdate}
-                        onChange={e => setStatusForm({...statusForm, progressUpdate: e.target.value})}
+                        onChange={e => setStatusForm({ ...statusForm, progressUpdate: e.target.value })}
                       />
                     </div>
                   </>
                 )}
-                
+
                 {/* Resolved Form */}
                 {statusAction === 'resolved' && (
                   <>
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                        Resolution Department <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        required
+                        className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                        value={statusForm.assignedDepartment}
+                        onChange={e => handleDepartmentChange(e.target.value)}
+                      >
+                        <option value="">Select Department</option>
+                        {departments.map(dept => (
+                          <option key={dept.id} value={dept.name}>{dept.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {selectedDeptDetails && (
+                      <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-100 dark:border-green-800 text-sm">
+                        <h4 className="font-bold text-green-800 dark:text-green-300 mb-2">Department & Officer Details</h4>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <span className="block text-xs text-green-600/70 dark:text-green-400 uppercase font-bold">Department</span>
+                            <span className="text-green-900 dark:text-green-100">{selectedDeptDetails.name}</span>
+                          </div>
+                          <div>
+                            <span className="block text-xs text-green-600/70 dark:text-green-400 uppercase font-bold">Head Officer</span>
+                            <span className="text-green-900 dark:text-green-100">{selectedDeptDetails.head || 'N/A'}</span>
+                          </div>
+                          <div>
+                            <span className="block text-xs text-green-600/70 dark:text-green-400 uppercase font-bold">Contact</span>
+                            <span className="text-green-900 dark:text-green-100">{selectedDeptDetails.contact || 'N/A'}</span>
+                          </div>
+                          <div>
+                            <span className="block text-xs text-green-600/70 dark:text-green-400 uppercase font-bold">Email</span>
+                            <span className="text-green-900 dark:text-green-100">{selectedDeptDetails.email || 'N/A'}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Completion Time <span className="text-red-500">*</span>
                       </label>
-                      <input 
-                        type="datetime-local" 
+                      <input
+                        type="datetime-local"
                         required
                         className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                         value={statusForm.resolutionTime}
-                        onChange={e => setStatusForm({...statusForm, resolutionTime: e.target.value})}
+                        onChange={e => setStatusForm({ ...statusForm, resolutionTime: e.target.value })}
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Resolution Officer <span className="text-red-500">*</span>
                       </label>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         required
                         placeholder="Officer in charge"
                         className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                         value={statusForm.resolutionOfficer}
-                        onChange={e => setStatusForm({...statusForm, resolutionOfficer: e.target.value})}
+                        onChange={e => setStatusForm({ ...statusForm, resolutionOfficer: e.target.value })}
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Resolution Remarks <span className="text-red-500">*</span>
                       </label>
-                      <textarea 
+                      <textarea
                         required
                         placeholder="How was the issue resolved..."
                         className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white h-24"
                         value={statusForm.resolutionRemarks}
-                        onChange={e => setStatusForm({...statusForm, resolutionRemarks: e.target.value})}
+                        onChange={e => setStatusForm({ ...statusForm, resolutionRemarks: e.target.value })}
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                        Cost Incurred (₹)
+                        Cost Incurred (₹) <span className="text-red-500">*</span>
                       </label>
-                      <input 
-                        type="number" 
+                      <input
+                        type="number"
                         step="0.01"
                         placeholder="0.00"
+                        required
                         className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                         value={statusForm.costIncurred}
-                        onChange={e => setStatusForm({...statusForm, costIncurred: e.target.value})}
+                        onChange={e => setStatusForm({ ...statusForm, costIncurred: e.target.value })}
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                        Resources Used
+                        Equipment/Resources Used <span className="text-red-500">*</span>
                       </label>
-                      <textarea 
+                      <textarea
+                        required
                         placeholder="Materials, manpower, equipment used..."
                         className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white h-20"
                         value={statusForm.resourcesUsed}
-                        onChange={e => setStatusForm({...statusForm, resourcesUsed: e.target.value})}
+                        onChange={e => setStatusForm({ ...statusForm, resourcesUsed: e.target.value })}
                       />
                     </div>
                   </>
                 )}
-                
+
                 {/* Rejected Form */}
                 {statusAction === 'rejected' && (
                   <>
@@ -647,44 +750,43 @@ const AdminIssues = () => {
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Rejection Reason <span className="text-red-500">*</span>
                       </label>
-                      <textarea 
+                      <textarea
                         required
                         placeholder="Why is this issue being rejected..."
                         className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white h-24"
                         value={statusForm.rejectionReason}
-                        onChange={e => setStatusForm({...statusForm, rejectionReason: e.target.value})}
+                        onChange={e => setStatusForm({ ...statusForm, rejectionReason: e.target.value })}
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Alternative Suggestion
                       </label>
-                      <textarea 
+                      <textarea
                         placeholder="What can the user do instead..."
                         className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white h-20"
                         value={statusForm.alternativeSuggestion}
-                        onChange={e => setStatusForm({...statusForm, alternativeSuggestion: e.target.value})}
+                        onChange={e => setStatusForm({ ...statusForm, alternativeSuggestion: e.target.value })}
                       />
                     </div>
                   </>
                 )}
-                
+
                 <div className="flex justify-end space-x-3 mt-6 pt-4 border-t dark:border-slate-700">
-                  <button 
+                  <button
                     type="button"
                     onClick={() => setShowStatusModal(false)}
                     className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
                   >
                     Cancel
                   </button>
-                  <button 
+                  <button
                     type="submit"
-                    className={`px-6 py-2 text-white rounded-lg font-medium transition-colors ${
-                      statusAction === 'resolved' ? 'bg-green-600 hover:bg-green-700' :
+                    className={`px-6 py-2 text-white rounded-lg font-medium transition-colors ${statusAction === 'resolved' ? 'bg-green-600 hover:bg-green-700' :
                       statusAction === 'rejected' ? 'bg-red-600 hover:bg-red-700' :
-                      'bg-blue-600 hover:bg-blue-700'
-                    }`}
+                        'bg-blue-600 hover:bg-blue-700'
+                      }`}
                   >
                     {statusAction === 'in-progress' && 'Mark In Progress'}
                     {statusAction === 'resolved' && 'Mark as Resolved'}

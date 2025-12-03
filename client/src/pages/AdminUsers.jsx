@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useToast } from '../context/ToastContext';
 import AdminLayout from '../layouts/AdminLayout';
+import axiosInstance, { API_BASE } from '../utils/axios';
 
 const AdminUsers = () => {
   const [users, setUsers] = useState([]);
   const { showToast } = useToast();
-
-  const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -50,21 +49,35 @@ const AdminUsers = () => {
   };
 
   const handleDelete = async (userId) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) return;
+    const userToDelete = users.find(u => u.id === userId);
+    const currentUser = JSON.parse(localStorage.getItem('user'));
+    
+    // Prevent deleting yourself
+    if (userId === currentUser?.id) {
+      showToast('You cannot delete your own account', 'error');
+      return;
+    }
+
+    if (!window.confirm(`Are you sure you want to permanently delete ${userToDelete?.name || 'this user'}? This action cannot be undone and will remove all their data from the database.`)) return;
+    
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(API_BASE + `/users/${userId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
+      
+      const data = await response.json();
+      
       if (response.ok) {
-        showToast('User deleted', 'success');
+        showToast('User permanently deleted from database', 'success');
         // Immediately update the UI by removing the user from state
         setUsers(users.filter(user => user.id !== userId));
       } else {
-        showToast('Error deleting user', 'error');
+        showToast(data.error || 'Error deleting user', 'error');
       }
     } catch (error) {
+      console.error('Error deleting user:', error);
       showToast('Error deleting user', 'error');
     }
   };
