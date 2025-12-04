@@ -33,12 +33,17 @@ const Dashboard = ({ myReportsOnly = false }) => {
       // Always fetch user's issues for the main dashboard view as requested
       params.append('userId', user.id);
 
-      const [issuesRes, statsRes] = await Promise.all([
-        axiosInstance.get(`/issues?${params.toString()}`),
-        axiosInstance.get(`/stats?userId=${user.id}`)
-      ]);
-      setIssues(issuesRes.data);
-      setStats(statsRes.data);
+      const issuesRes = await axiosInstance.get(`/issues?${params.toString()}`);
+      const issuesData = issuesRes.data;
+      
+      setIssues(issuesData);
+      
+      // Calculate stats from issues data
+      const totalIssues = issuesData.length;
+      const resolvedIssues = issuesData.filter(issue => issue.status === 'resolved').length;
+      const pendingIssues = issuesData.filter(issue => issue.status === 'pending').length;
+      
+      setStats({ totalIssues, resolvedIssues, pendingIssues });
     } catch (error) {
       console.error('Error fetching data:', error);
       addToast('Failed to load dashboard data', 'error');

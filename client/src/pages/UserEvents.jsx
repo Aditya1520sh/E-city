@@ -27,29 +27,11 @@ const UserEvents = () => {
 
   const fetchEvents = async () => {
     try {
-      const token = localStorage.getItem('token');
-      console.log('Fetching events with token:', token ? 'Token exists' : 'No token');
-      
-      const response = await fetch(`${API_BASE}/events?t=${Date.now()}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
-      
-      console.log('Events API response status:', response.status);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('Events data received:', data);
+      const response = await axiosInstance.get('/events');
+      const data = response.data;
       
       if (Array.isArray(data)) {
         setEvents(data);
-        console.log('Events set to state:', data.length, 'events');
       } else {
         console.error('Events data is not an array:', data);
         setEvents([]);
