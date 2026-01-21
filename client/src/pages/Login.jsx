@@ -427,12 +427,12 @@ const Login = () => {
                   Keep me signed in
                 </span>
               </label>
-              <a
-                href="#"
+              <Link
+                to="/forgot-password"
                 className="text-blue-400 font-bold hover:text-blue-300 transition-colors"
               >
-                Recovery
-              </a>
+                Forgot Password?
+              </Link>
             </div>
 
             {/* Premium CTA Button */}
@@ -709,3 +709,5 @@ const Login = () => {
 };
 
 export default Login;
+
+
