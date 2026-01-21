@@ -10,6 +10,18 @@ const { sendPasswordResetEmail, sendWelcomeEmailAsync } = require('../services/e
 
 const router = express.Router();
 
+// Debug endpoint to check email config (remove in production later)
+router.get('/debug-email-config', (req, res) => {
+  res.json({
+    smtp_host: process.env.SMTP_HOST ? '✅ Set' : '❌ Missing',
+    smtp_port: process.env.SMTP_PORT ? '✅ Set' : '❌ Missing',
+    smtp_user: process.env.SMTP_USER ? '✅ Set' : '❌ Missing',
+    smtp_pass: process.env.SMTP_PASS ? '✅ Set (' + process.env.SMTP_PASS.length + ' chars)' : '❌ Missing',
+    from_email: process.env.FROM_EMAIL || 'Not set',
+    client_url: process.env.CLIENT_URL || 'Not set (will use localhost)',
+  });
+});
+
 // Check JWT_SECRET is configured
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
