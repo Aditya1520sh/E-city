@@ -300,16 +300,24 @@ router.post('/forgot-password', validateForgotPassword, async (req, res) => {
     const clientURL = process.env.CLIENT_URL || 'http://localhost:5173';
     const resetLink = `${clientURL}/reset-password?token=${rawToken}`;
 
-    // Send password reset email
-    const emailSent = await sendPasswordResetEmail(email, resetLink, user.name || 'User');
+    // Send response immediately - don't wait for email
+    res.json({ message: 'If an account exists with this email, you will receive a password reset link.' });
 
-    if (!emailSent) {
-      console.error(`[FORGOT-PASSWORD] Failed to send email to: ${email}`);
-      // Don't expose email failure to user for security
-    }
+    // Send password reset email in background (non-blocking)
+    setImmediate(async () => {
+      try {
+        const emailSent = await sendPasswordResetEmail(email, resetLink, user.name || 'User');
+        if (emailSent) {
+          console.log(`[FORGOT-PASSWORD] Email sent successfully to: ${email}`);
+        } else {
+          console.error(`[FORGOT-PASSWORD] Failed to send email to: ${email}`);
+        }
+      } catch (emailError) {
+        console.error(`[FORGOT-PASSWORD] Email error:`, emailError.message);
+      }
+    });
 
     console.log(`[FORGOT-PASSWORD] Reset token generated for: ${email}`);
-    res.json({ message: 'If an account exists with this email, you will receive a password reset link.' });
 
   } catch (error) {
     console.error('[FORGOT-PASSWORD ERROR]', error.message, error.stack);
