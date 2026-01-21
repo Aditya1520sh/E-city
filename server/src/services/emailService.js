@@ -1,7 +1,12 @@
 const nodemailer = require('nodemailer');
 
-// Email configuration using environment variables
+// Create a singleton transporter with connection pooling for better performance
+let transporter = null;
+
 const getTransporter = () => {
+  // Return existing transporter if already created
+  if (transporter) return transporter;
+
   const host = process.env.SMTP_HOST;
   const port = parseInt(process.env.SMTP_PORT) || 587;
   const user = process.env.SMTP_USER;
@@ -12,12 +17,37 @@ const getTransporter = () => {
     return null;
   }
 
-  return nodemailer.createTransport({
+  // Create transporter with connection pooling and extended timeouts for Render
+  transporter = nodemailer.createTransport({
     host,
     port,
     secure: port === 465,
-    auth: { user, pass }
+    auth: { user, pass },
+    // Connection pool settings
+    pool: true,
+    maxConnections: 3,
+    maxMessages: 100,
+    // Extended timeouts for cloud environments (Render free tier)
+    connectionTimeout: 60000, // 60 seconds
+    greetingTimeout: 30000,   // 30 seconds
+    socketTimeout: 120000,    // 2 minutes
+    // TLS settings
+    tls: {
+      rejectUnauthorized: false // Allow self-signed certs
+    }
   });
+
+  // Verify connection on startup
+  transporter.verify((error, success) => {
+    if (error) {
+      console.error('❌ SMTP connection failed:', error.message);
+      transporter = null; // Reset so it tries again
+    } else {
+      console.log('✅ SMTP server ready to send emails');
+    }
+  });
+
+  return transporter;
 };
 
 const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@ecity.com';
@@ -106,14 +136,26 @@ const sendPasswordResetEmail = async (to, resetLink, userName = 'User') => {
     `
   };
 
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log(`Password reset email sent to ${to}`);
-    return true;
-  } catch (error) {
-    console.error('Failed to send password reset email:', error.message);
-    return false;
+  // Retry logic for cloud environments
+  const maxRetries = 3;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log(`✅ Password reset email sent to ${to} (attempt ${attempt})`);
+      return true;
+    } catch (error) {
+      console.error(`❌ Attempt ${attempt}/${maxRetries} failed:`, error.message);
+      if (attempt < maxRetries) {
+        // Wait before retry (exponential backoff)
+        const delay = attempt * 2000;
+        console.log(`⏳ Retrying in ${delay/1000}s...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
   }
+  
+  console.error(`Failed to send password reset email after ${maxRetries} attempts`);
+  return false;
 };
 
 /**
@@ -193,14 +235,24 @@ const sendWelcomeEmail = async (to, userName = 'User') => {
     `
   };
 
-  try {
-    await transporter.sendMail(mailOptions);
-    console.log(`Welcome email sent to ${to}`);
-    return true;
-  } catch (error) {
-    console.error('Failed to send welcome email:', error.message);
-    return false;
+  // Retry logic for cloud environments
+  const maxRetries = 3;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log(`✅ Welcome email sent to ${to} (attempt ${attempt})`);
+      return true;
+    } catch (error) {
+      console.error(`❌ Welcome email attempt ${attempt}/${maxRetries} failed:`, error.message);
+      if (attempt < maxRetries) {
+        const delay = attempt * 2000;
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
   }
+  
+  console.error(`Failed to send welcome email after ${maxRetries} attempts`);
+  return false;
 };
 
 /**
